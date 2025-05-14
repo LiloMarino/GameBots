@@ -3,6 +3,7 @@ import mss
 import numpy as np
 import pygetwindow as gw
 from core import debug
+from core.constants import GREEN, RED
 
 
 class Sensor:
@@ -30,33 +31,63 @@ class Sensor:
             return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
         return None
 
-    def get_grade(self):
-        if self.grade_region:
-            img = np.array(self.sct.grab(self.grade_region))
-            return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-        else:
-            img = self.get_screenshot()
-            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    def detectar_grade_canny_edge(self):
+        screenshot = self.get_screenshot()
+        debug.save_image(screenshot, "screenshot")
 
-            # Intevalo de cor HSV do marrom da borda
-            lower = np.array([26, 18, 60])
-            upper = np.array([29, 21, 61])
+        # Converte para escala de cinza
+        gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+        debug.save_image(gray, "screenshot gray")
 
-            # Cria uma máscara usando o intervalo HSV
-            mask = cv2.inRange(hsv, lower, upper)
-            debug.save_image(mask, "mask")
+        # Desfoque Gaussiano para reduzir o ruído
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        debug.save_image(blur, "screenshot gaussian blur")
 
-            # Encontra contornos da máscara
-            contours, _ = cv2.findContours(
-                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        # Detectar bordas com Canny Edge Detection
+        edges = cv2.Canny(blur, 10, 50)
+        debug.save_image(edges, "screenshot edges")
+
+        # Detectar contornos
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )  # <- ERRO
+        img_contorns = cv2.drawContours(
+            cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR), contours, -1, GREEN, 1
+        )
+        debug.save_image(img_contorns, "screenshot contornos")
+
+        quadrados = []
+        for cnt in contours:
+            approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
+            if len(approx) == 4 and cv2.isContourConvex(approx):
+                x, y, w, h = cv2.boundingRect(approx)
+                aspect_ratio = w / float(h)
+                area = w * h
+                if 0.9 < aspect_ratio < 1.1 and 100 < w < 300:
+                    quadrados.append((x, y, w, h))
+
+        # Agrupar quadrados próximos para tentar encontrar a grade
+        if len(quadrados) >= 16:
+            # Tenta encontrar a região englobando todos os quadrados
+            xs = [x for x, y, w, h in quadrados]
+            ys = [y for x, y, w, h in quadrados]
+            ws = [w for x, y, w, h in quadrados]
+            hs = [h for x, y, w, h in quadrados]
+            x_min, y_min = min(xs), min(ys)
+            x_max, y_max = max([x + w for x, w in zip(xs, ws)]), max(
+                [y + h for y, h in zip(ys, hs)]
             )
-            if contours:
-                # Pega o maior contorno (provavelmente a grade)
-                largest = max(contours, key=cv2.contourArea)
-                x, y, w, h = cv2.boundingRect(largest)
-                grid = img[y : y + h, x : x + w]
-                debug.save_image(grid, "grid")
-                return grid
+            cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
+            grade = screenshot[y_min:y_max, x_min:x_max]
+            debug.save_image(grade, "grade")
+        else:
+            print("Grade não encontrada. Quadrados detectados:", len(quadrados))
+
+        # Mostrar debug opcional
+        for x, y, w, h in quadrados:
+            cv2.rectangle(screenshot, (x, y), (x + w, y + h), RED, 1)
+
+        debug.save_image(screenshot, "screenshot com quadrados")
 
     def __del__(self):
         self.sct.close()

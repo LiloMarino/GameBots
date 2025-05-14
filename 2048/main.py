@@ -5,5 +5,4 @@ from core.sensor import Sensor
 
 visor = Sensor("Google Chrome")
 sleep(2)
-save_image(visor.get_screenshot(), "screenshot")
-visor.get_grade()
+visor.detectar_grade_canny_edge()
