@@ -1,0 +1,4 @@
+{
+  "python.analysis.extraPaths": ["./2048"],
+  "python.autoComplete.extraPaths": ["./2048"]
+}
