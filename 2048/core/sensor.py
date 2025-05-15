@@ -1,3 +1,5 @@
+from typing import TypeAlias
+
 import cv2
 import easyocr
 import mss
@@ -6,13 +8,15 @@ import pygetwindow as gw
 from core import debug
 from core.constants import BLUE, GREEN
 
+Tile: TypeAlias = tuple[int, int, int, int]
+
 
 class Sensor:
     def __init__(self, window_name: str):
         self.region = self.get_window(window_name)
-        self.sct = mss.mss()  # Mantém o MSS aberto enquanto o objeto existir
-        self.reader = easyocr.Reader(["en"], gpu=False)
         self.grade_region = None
+        self.sct = mss.mss()  # Mantém o MSS aberto enquanto o objeto existir
+        self.reader = easyocr.Reader(["pt"])
 
     def get_window(self, window_name: str) -> dict[str, int]:
         """Retorna a região da janela
@@ -80,50 +84,61 @@ class Sensor:
         )
         debug.save_image(img_contorns, "screenshot contornos")
 
-        quadrados = []
+        tiles: list[Tile] = []
         for i, cnt in enumerate(contours):
-            # Filtra apenas contornos externos
+            # Filtra apenas contornos externos (pai = -1)
             if hierarchy[0][i][3] == -1:
                 approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
                 if len(approx) == 4 and cv2.isContourConvex(approx):
+
+                    # Obtém os retângulos delimitadores
                     x, y, w, h = cv2.boundingRect(approx)
                     aspect_ratio = w / float(h)
                     if 0.9 < aspect_ratio < 1.1 and 100 < w < 300:
-                        quadrados.append((x, y, w, h))
+                        tiles.append((x, y, w, h))
 
-        # Agrupar quadrados próximos para tentar encontrar a grade
-        if len(quadrados) >= 16:
-            # Tenta encontrar a região englobando todos os quadrados
-            xs = [x for x, y, w, h in quadrados]
-            ys = [y for x, y, w, h in quadrados]
-            ws = [w for x, y, w, h in quadrados]
-            hs = [h for x, y, w, h in quadrados]
-            x_min, y_min = min(xs), min(ys)
-            x_max, y_max = max([x + w for x, w in zip(xs, ws)]), max(
-                [y + h for y, h in zip(ys, hs)]
-            )
+        # Verifica se encontrou os 16 tiles
+        if len(tiles) == 16:
+            # Obtém os delimitadores da grade
+            x_min = min(x for x, y, w, h in tiles)
+            y_min = min(y for x, y, w, h in tiles)
+            x_max = max(x + w for x, y, w, h in tiles)
+            y_max = max(y + h for x, y, w, h in tiles)
+
+            # Salva a região da grade para screenshots futuras
+            self.grade_region = {
+                "top": y_min,
+                "left": x_min,
+                "width": x_max - x_min,
+                "height": y_max - y_min,
+            }
             cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
+
             grade = screenshot[y_min:y_max, x_min:x_max]
             debug.save_image(grade, "grade")
         else:
-            print("Grade não encontrada. Quadrados detectados:", len(quadrados))
+            print("Grade não encontrada. Quadrados detectados:", len(tiles))
 
-        # Salva a região da grade para screenshots futuras
-        self.grade_region = {
-            "top": y_min,
-            "left": x_min,
-            "width": x_max - x_min,
-            "height": y_max - y_min,
-        }
-
-        # Mostrar debug opcional
-        for i, (x, y, w, h) in enumerate(quadrados):
+        # ERRO AQUI, OS TILES NÃO ESTÃO ORDENADOS
+        tiles = sorted(tiles, key=lambda t: (t[0]))
+        tiles = sorted(tiles, key=lambda t: (t[1]))
+        for i, (x, y, w, h) in enumerate(tiles):
             cv2.rectangle(screenshot, (x, y), (x + w, y + h), BLUE, 1)
+            cx, cy = x + w // 2, y + h // 2
+            cv2.putText(
+                screenshot,
+                str(i),
+                (cx - 10, cy + 10),  # deslocamento para centralizar melhor o texto
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,  # tamanho da fonte
+                (0, 255, 255),  # cor (amarelo)
+                1,  # espessura
+                cv2.LINE_AA,
+            )
             tile = screenshot[y : y + h, x : x + w]
             debug.save_image(tile, f"tile_{i:02}")
         debug.save_image(screenshot, "screenshot com quadrados")
-        quadrados_ordenados = sorted(quadrados, key=lambda q: (q[0], q[1]))
-        return self.grade_region, quadrados_ordenados
+        return self.grade_region, tiles
 
     def extrair_tiles(self, grade_img, quadrados, offset=(0, 0)):
         ox, oy = offset
