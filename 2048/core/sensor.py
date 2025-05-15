@@ -55,22 +55,24 @@ class Sensor:
         debug.save_image(edges, "screenshot edges")
 
         # Detectar contornos
-        contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(
+            edges, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
         img_contorns = cv2.drawContours(
             cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR), contours, -1, GREEN, 1
         )
         debug.save_image(img_contorns, "screenshot contornos")
 
         quadrados = []
-        for cnt in contours:
-            approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
-            if len(approx) == 4 and cv2.isContourConvex(approx):
-                x, y, w, h = cv2.boundingRect(approx)
-                aspect_ratio = w / float(h)
-
-                # Elimina retângulos e quadrados pequenos e grandes
-                if 0.9 < aspect_ratio < 1.1 and 100 < w < 300:
-                    quadrados.append((x, y, w, h))
+        for i, cnt in enumerate(contours):
+            # Filtra apenas contornos externos
+            if hierarchy[0][i][3] == -1:
+                approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
+                if len(approx) == 4 and cv2.isContourConvex(approx):
+                    x, y, w, h = cv2.boundingRect(approx)
+                    aspect_ratio = w / float(h)
+                    if 0.9 < aspect_ratio < 1.1 and 100 < w < 300:
+                        quadrados.append((x, y, w, h))
 
         # Agrupar quadrados próximos para tentar encontrar a grade
         if len(quadrados) >= 16:
@@ -103,14 +105,14 @@ class Sensor:
             tile = screenshot[y : y + h, x : x + w]
             debug.save_image(tile, f"tile_{i:02}")
         debug.save_image(screenshot, "screenshot com quadrados")
-
-        return self.grade_region, quadrados
+        quadrados_ordenados = sorted(quadrados, key=lambda q: (q[0], q[1]))
+        return self.grade_region, quadrados_ordenados
 
     def extrair_tiles(self, grade_img, quadrados, offset=(0, 0)):
         ox, oy = offset
 
         resultados_ocr = []
-        for i, (x, y, w, h) in enumerate(quadrados):
+        for x, y, w, h in quadrados:
             # Ajusta coordenadas relativas ao recorte da grade
             tile = grade_img[(y - oy) : (y - oy + h), (x - ox) : (x - ox + w)]
             texto = self._ler_texto(tile)
