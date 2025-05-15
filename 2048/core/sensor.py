@@ -10,12 +10,22 @@ from core.constants import BLUE, GREEN
 class Sensor:
     def __init__(self, window_name: str):
         self.region = self.get_window(window_name)
-        # Mantém o MSS aberto enquanto o objeto existir
-        self.sct = mss.mss()
+        self.sct = mss.mss()  # Mantém o MSS aberto enquanto o objeto existir
         self.reader = easyocr.Reader(["en"], gpu=False)
         self.grade_region = None
 
-    def get_window(self, window_name: str):
+    def get_window(self, window_name: str) -> dict[str, int]:
+        """Retorna a região da janela
+
+        Args:
+            window_name (str): Nome da janela/processo
+
+        Raises:
+            ValueError: Janela não encontrada
+
+        Returns:
+            dict[str, int]: Região da janela
+        """
         window = gw.getWindowsWithTitle(window_name)
         if window:
             win = window[0]
@@ -25,9 +35,20 @@ class Sensor:
                 "width": win.width,
                 "height": win.height,
             }
-        return None
+        else:
+            raise ValueError(f"Janela {window_name} não encontrada")
 
-    def get_screenshot(self, region=None):
+    def get_screenshot(
+        self, region: dict[str, int] | None = None
+    ) -> cv2.typing.MatLike:
+        """Retorna uma captura de tela
+
+        Args:
+            region (dict[str, int] | None, optional): Região de captura. Defaults to None.
+
+        Returns:
+            cv2.typing.MatLike: Imagem
+        """
         img = np.array(self.sct.grab(region if region else self.region))
         return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
@@ -35,12 +56,8 @@ class Sensor:
         pass
 
     def detectar_grade_canny_edge(self):
-        if self.region:
-            screenshot = self.get_screenshot(self.region)
-            debug.save_image(screenshot, "screenshot")
-        else:
-            screenshot = self.get_screenshot()
-            debug.save_image(screenshot, "screenshot")
+        screenshot = self.get_screenshot(self.grade_region)
+        debug.save_image(screenshot, "screenshot")
 
         # Converte para escala de cinza
         gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
