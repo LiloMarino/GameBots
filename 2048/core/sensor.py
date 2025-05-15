@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import TypeAlias
 
 import cv2
@@ -8,15 +9,40 @@ import pygetwindow as gw
 from core import debug
 from core.constants import BLUE, GREEN
 
+# Tipos
 Tile: TypeAlias = tuple[int, int, int, int]
 
 
+class OCRMethod(Enum):
+    TESSERACT = auto()
+    EASYOCR = auto()
+
+
+class GradeMethod(Enum):
+    CANNY = auto()
+    COR = auto()
+
+
+# Classe Principal
 class Sensor:
-    def __init__(self, window_name: str):
+    def __init__(
+        self,
+        window_name: str,
+        ocr_method: OCRMethod = OCRMethod.EASYOCR,
+        grade_method: GradeMethod = GradeMethod.CANNY,
+    ):
         self.region = self.get_window(window_name)
         self.grade_region = None
-        self.sct = mss.mss()  # Mantém o MSS aberto enquanto o objeto existir
+        self.sct = mss.mss()
         self.reader = easyocr.Reader(["pt"])
+        self.ler_texto = {
+            OCRMethod.EASYOCR: self._ocr_easyocr,
+            OCRMethod.TESSERACT: self._ocr_tesseract,
+        }.get(ocr_method, self._ocr_easyocr)
+        self.detectar_grade = {
+            GradeMethod.CANNY: self.detectar_grade_canny_edge,
+            GradeMethod.COR: self.detectar_grade_cor,
+        }.get(grade_method, self.detectar_grade_canny_edge)
 
     def get_window(self, window_name: str) -> dict[str, int]:
         """Retorna a região da janela
@@ -117,11 +143,11 @@ class Sensor:
             grade = screenshot[y_min:y_max, x_min:x_max]
             debug.save_image(grade, "grade")
         else:
-            print("Grade não encontrada. Quadrados detectados:", len(tiles))
+            raise ValueError("Grade não encontrada. Quadrados detectados:", len(tiles))
 
+        return self.grade_region, tiles
         # ERRO AQUI, OS TILES NÃO ESTÃO ORDENADOS
-        tiles = sorted(tiles, key=lambda t: (t[0]))
-        tiles = sorted(tiles, key=lambda t: (t[1]))
+        tiles = sorted(tiles, key=lambda t: (t[1], t[0]))
         for i, (x, y, w, h) in enumerate(tiles):
             cv2.rectangle(screenshot, (x, y), (x + w, y + h), BLUE, 1)
             cx, cy = x + w // 2, y + h // 2
@@ -135,8 +161,6 @@ class Sensor:
                 1,  # espessura
                 cv2.LINE_AA,
             )
-            tile = screenshot[y : y + h, x : x + w]
-            debug.save_image(tile, f"tile_{i:02}")
         debug.save_image(screenshot, "screenshot com quadrados")
         return self.grade_region, tiles
 
@@ -147,13 +171,16 @@ class Sensor:
         for x, y, w, h in quadrados:
             # Ajusta coordenadas relativas ao recorte da grade
             tile = grade_img[(y - oy) : (y - oy + h), (x - ox) : (x - ox + w)]
-            texto = self._ler_texto(tile)
+            texto = self._ocr_easyocr(tile)
             resultados_ocr.append(texto)
         return np.array(resultados_ocr).reshape((4, 4))
 
-    def _ler_texto(self, img):
+    def _ocr_easyocr(self, img):
         resultado = self.reader.readtext(img, detail=0, paragraph=False)
         return resultado[0] if resultado else None
+
+    def _ocr_tesseract(self):
+        pass
 
     def __del__(self):
         self.sct.close()
