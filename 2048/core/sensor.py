@@ -31,6 +31,9 @@ class Sensor:
             return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
         return None
 
+    def detectar_grade_cor(self):
+        pass
+
     def detectar_grade_canny_edge(self):
         screenshot = self.get_screenshot()
         debug.save_image(screenshot, "screenshot")
@@ -48,9 +51,7 @@ class Sensor:
         debug.save_image(edges, "screenshot edges")
 
         # Detectar contornos
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )  # <- ERRO
+        contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         img_contorns = cv2.drawContours(
             cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR), contours, -1, GREEN, 1
         )
