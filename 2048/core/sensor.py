@@ -1,9 +1,10 @@
 import cv2
+import easyocr
 import mss
 import numpy as np
 import pygetwindow as gw
 from core import debug
-from core.constants import GREEN, RED
+from core.constants import BLUE, GREEN
 
 
 class Sensor:
@@ -11,6 +12,7 @@ class Sensor:
         self.region = self.get_window(window_name)
         # Mantém o MSS aberto enquanto o objeto existir
         self.sct = mss.mss()
+        self.reader = easyocr.Reader(["en"], gpu=False)
         self.grade_region = None
 
     def get_window(self, window_name: str):
@@ -86,12 +88,38 @@ class Sensor:
             debug.save_image(grade, "grade")
         else:
             print("Grade não encontrada. Quadrados detectados:", len(quadrados))
-        self.grade_region = (x_min, y_min, x_max, y_max)
+
+        # Salva a região da grade para screenshots futuras
+        self.grade_region = {
+            "top": y_min,
+            "left": x_min,
+            "width": x_max - x_min,
+            "height": y_max - y_min,
+        }
 
         # Mostrar debug opcional
-        for x, y, w, h in quadrados:
-            cv2.rectangle(screenshot, (x, y), (x + w, y + h), RED, 1)
+        for i, (x, y, w, h) in enumerate(quadrados):
+            cv2.rectangle(screenshot, (x, y), (x + w, y + h), BLUE, 1)
+            tile = screenshot[y : y + h, x : x + w]
+            debug.save_image(tile, f"tile_{i:02}")
         debug.save_image(screenshot, "screenshot com quadrados")
+
+        return self.grade_region, quadrados
+
+    def extrair_tiles(self, grade_img, quadrados, offset=(0, 0)):
+        ox, oy = offset
+
+        resultados_ocr = []
+        for i, (x, y, w, h) in enumerate(quadrados):
+            # Ajusta coordenadas relativas ao recorte da grade
+            tile = grade_img[(y - oy) : (y - oy + h), (x - ox) : (x - ox + w)]
+            texto = self._ler_texto(tile)
+            resultados_ocr.append(texto)
+        return np.array(resultados_ocr).reshape((4, 4))
+
+    def _ler_texto(self, img):
+        resultado = self.reader.readtext(img, detail=0, paragraph=False)
+        return resultado[0] if resultado else None
 
     def __del__(self):
         self.sct.close()
