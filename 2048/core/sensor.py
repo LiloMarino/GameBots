@@ -25,18 +25,20 @@ class Sensor:
             }
         return None
 
-    def get_screenshot(self):
-        if self.region:
-            img = np.array(self.sct.grab(self.region))
-            return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-        return None
+    def get_screenshot(self, region=None):
+        img = np.array(self.sct.grab(region if region else self.region))
+        return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
     def detectar_grade_cor(self):
         pass
 
     def detectar_grade_canny_edge(self):
-        screenshot = self.get_screenshot()
-        debug.save_image(screenshot, "screenshot")
+        if self.region:
+            screenshot = self.get_screenshot(self.region)
+            debug.save_image(screenshot, "screenshot")
+        else:
+            screenshot = self.get_screenshot()
+            debug.save_image(screenshot, "screenshot")
 
         # Converte para escala de cinza
         gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
@@ -63,7 +65,8 @@ class Sensor:
             if len(approx) == 4 and cv2.isContourConvex(approx):
                 x, y, w, h = cv2.boundingRect(approx)
                 aspect_ratio = w / float(h)
-                area = w * h
+
+                # Elimina retângulos e quadrados pequenos e grandes
                 if 0.9 < aspect_ratio < 1.1 and 100 < w < 300:
                     quadrados.append((x, y, w, h))
 
@@ -83,11 +86,11 @@ class Sensor:
             debug.save_image(grade, "grade")
         else:
             print("Grade não encontrada. Quadrados detectados:", len(quadrados))
+        self.grade_region = (x_min, y_min, x_max, y_max)
 
         # Mostrar debug opcional
         for x, y, w, h in quadrados:
             cv2.rectangle(screenshot, (x, y), (x + w, y + h), RED, 1)
-
         debug.save_image(screenshot, "screenshot com quadrados")
 
     def __del__(self):
