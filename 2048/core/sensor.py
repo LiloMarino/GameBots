@@ -135,32 +135,34 @@ class Sensor:
                         tiles.append(Tile(x, y, w, h))
 
         # Verifica se encontrou os 16 tiles
-        if len(tiles) == 16:
-            # Obtém os delimitadores da grade
-            x_min = min(t.x for t in tiles)
-            y_min = min(t.y for t in tiles)
-            x_max = max(t.x + t.w for t in tiles)
-            y_max = max(t.y + t.h for t in tiles)
-
-            # Salva a região da grade para screenshots futuras
-            if not self.grade_region:
-                MARGEM = 20
-                self.grade_region = {
-                    "top": self.region["top"] + y_min - MARGEM,
-                    "left": self.region["left"] + x_min - MARGEM,
-                    "width": x_max - x_min + 2 * MARGEM,
-                    "height": y_max - y_min + 2 * MARGEM,
-                }
-            cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
-
-            # Atualiza coordenadas para ficarem relativas à grade
-            tiles = [Tile(t.x - x_min, t.y - y_min, t.w, t.h) for t in tiles]
-
-            grade = original[y_min:y_max, x_min:x_max]
-            debug.save_image(screenshot, "screenshot grade")
-            debug.save_image(grade, "grade")
+        if len(tiles) >= 16:
+            tiles = sorted(tiles, key=lambda t: t.w * t.h, reverse=True)[:16]
         else:
             raise ValueError("Grade não encontrada. Quadrados detectados:", len(tiles))
+
+        # Obtém os delimitadores da grade
+        x_min = min(t.x for t in tiles)
+        y_min = min(t.y for t in tiles)
+        x_max = max(t.x + t.w for t in tiles)
+        y_max = max(t.y + t.h for t in tiles)
+
+        # Salva a região da grade para screenshots futuras
+        if not self.grade_region:
+            MARGEM = 20
+            self.grade_region = {
+                "top": self.region["top"] + y_min - MARGEM,
+                "left": self.region["left"] + x_min - MARGEM,
+                "width": x_max - x_min + 2 * MARGEM,
+                "height": y_max - y_min + 2 * MARGEM,
+            }
+        cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
+
+        # Atualiza coordenadas para ficarem relativas à grade
+        tiles = [Tile(t.x - x_min, t.y - y_min, t.w, t.h) for t in tiles]
+
+        grade = original[y_min:y_max, x_min:x_max]
+        debug.save_image(screenshot, "screenshot grade")
+        debug.save_image(grade, "grade")
 
         return grade, tiles
 
