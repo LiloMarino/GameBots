@@ -89,7 +89,7 @@ class Sensor:
 
     def get_grid(self):
         grade, tiles = self.detectar_grade()
-        tiles = self._sort_tiles(grade, tiles)
+        tiles = self._sort_tiles(grade.copy(), tiles)
         return self._extrair_tiles(grade, tiles)
 
     def _detectar_grade_cor(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
@@ -97,6 +97,7 @@ class Sensor:
 
     def _detectar_grade_canny_edge(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
         screenshot = self.get_screenshot(self.grade_region)
+        original = screenshot.copy()
         debug.save_image(screenshot, "screenshot")
 
         # Converte para escala de cinza
@@ -153,7 +154,8 @@ class Sensor:
             # Atualiza coordenadas para ficarem relativas à grade
             tiles = [Tile(t.x - x_min, t.y - y_min, t.w, t.h) for t in tiles]
 
-            grade = screenshot[y_min:y_max, x_min:x_max]
+            grade = original[y_min:y_max, x_min:x_max]
+            debug.save_image(screenshot, "screenshot grade")
             debug.save_image(grade, "grade")
         else:
             raise ValueError("Grade não encontrada. Quadrados detectados:", len(tiles))
@@ -207,12 +209,14 @@ class Sensor:
 
     def _extrair_tiles(
         self,
-        screenshot: cv2.typing.MatLike,
+        grid: cv2.typing.MatLike,
         tiles: list[Tile],
     ):
+        gray = cv2.cvtColor(grid, cv2.COLOR_BGR2GRAY)
+        _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
         resultados_ocr = []
         for t in tiles:
-            tile_img = screenshot[t.y : t.y + t.h, t.x : t.x + t.w]
+            tile_img = thresh[t.y : t.y + t.h, t.x : t.x + t.w]
             debug.save_image(tile_img, f"tile_{t.x}_{t.y}")
             texto = self.ler_texto(tile_img)
             resultados_ocr.append(texto)
