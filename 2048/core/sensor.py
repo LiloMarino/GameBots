@@ -214,19 +214,20 @@ class Sensor:
     ):
         gray = cv2.cvtColor(grid, cv2.COLOR_BGR2GRAY)
         _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
-        resultados_ocr = []
+
+        resultados_ocr: list[int] = []
         for t in tiles:
             tile_img = thresh[t.y : t.y + t.h, t.x : t.x + t.w]
             debug.save_image(tile_img, f"tile_{t.x}_{t.y}")
-            texto = self.ler_texto(tile_img)
-            resultados_ocr.append(texto)
-        return np.array(resultados_ocr).reshape((4, 4))
+            valor = self.ler_texto(tile_img)
+            resultados_ocr.append(valor)
+        return np.array(resultados_ocr, dtype=int).reshape((4, 4))
 
-    def _ocr_easyocr(self, img):
+    def _ocr_easyocr(self, img: cv2.typing.MatLike) -> int:
         resultado = self.reader.readtext(img, detail=0, paragraph=False)
-        return resultado[0] if resultado else None
+        return int(resultado[0]) if resultado else 0
 
-    def _ocr_tesseract(self):
+    def _ocr_tesseract(self, img: cv2.typing.MatLike) -> int:
         pass
 
     def __del__(self):
