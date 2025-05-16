@@ -109,7 +109,7 @@ class Sensor:
         debug.save_image(blur, "screenshot gaussian blur")
 
         # Detectar bordas com Canny Edge Detection
-        edges = cv2.Canny(blur, 10, 50)
+        edges = cv2.Canny(blur, 5, 10)
         debug.save_image(edges, "screenshot edges")
 
         # Detectar contornos
