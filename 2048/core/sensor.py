@@ -143,12 +143,14 @@ class Sensor:
             y_max = max(t.y + t.h for t in tiles)
 
             # Salva a região da grade para screenshots futuras
-            self.grade_region = {
-                "top": y_min,
-                "left": x_min,
-                "width": x_max - x_min,
-                "height": y_max - y_min,
-            }
+            if not self.grade_region:
+                MARGEM = 20
+                self.grade_region = {
+                    "top": self.region["top"] + y_min - MARGEM,
+                    "left": self.region["left"] + x_min - MARGEM,
+                    "width": x_max - x_min + 2 * MARGEM,
+                    "height": y_max - y_min + 2 * MARGEM,
+                }
             cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
 
             # Atualiza coordenadas para ficarem relativas à grade
