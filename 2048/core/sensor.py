@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import TypeAlias
+from typing import NamedTuple
 
 import cv2
 import easyocr
@@ -9,8 +9,13 @@ import pygetwindow as gw
 from core import debug
 from core.constants import BLUE, GREEN
 
+
 # Tipos
-Tile: TypeAlias = tuple[int, int, int, int]
+class Tile(NamedTuple):
+    x: int
+    y: int
+    w: int
+    h: int
 
 
 class OCRMethod(Enum):
@@ -40,9 +45,9 @@ class Sensor:
             OCRMethod.TESSERACT: self._ocr_tesseract,
         }.get(ocr_method, self._ocr_easyocr)
         self.detectar_grade = {
-            GradeMethod.CANNY: self.detectar_grade_canny_edge,
-            GradeMethod.COR: self.detectar_grade_cor,
-        }.get(grade_method, self.detectar_grade_canny_edge)
+            GradeMethod.CANNY: self._detectar_grade_canny_edge,
+            GradeMethod.COR: self._detectar_grade_cor,
+        }.get(grade_method, self._detectar_grade_canny_edge)
 
     def get_window(self, window_name: str) -> dict[str, int]:
         """Retorna a região da janela
@@ -82,10 +87,16 @@ class Sensor:
         img = np.array(self.sct.grab(region if region else self.region))
         return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-    def detectar_grade_cor(self):
+    def get_grid(self):
+        tiles = self.detectar_grade()
+        screenshot = self.get_screenshot()
+        tiles = self._sort_tiles(screenshot, tiles)
+        return self._extrair_tiles(tiles, screenshot)
+
+    def _detectar_grade_cor(self) -> list[Tile]:
         pass
 
-    def detectar_grade_canny_edge(self):
+    def _detectar_grade_canny_edge(self) -> list[Tile]:
         screenshot = self.get_screenshot(self.grade_region)
         debug.save_image(screenshot, "screenshot")
 
@@ -121,15 +132,15 @@ class Sensor:
                     x, y, w, h = cv2.boundingRect(approx)
                     aspect_ratio = w / float(h)
                     if 0.9 < aspect_ratio < 1.1 and 100 < w < 300:
-                        tiles.append((x, y, w, h))
+                        tiles.append(Tile(x, y, w, h))
 
         # Verifica se encontrou os 16 tiles
         if len(tiles) == 16:
             # Obtém os delimitadores da grade
-            x_min = min(x for x, y, w, h in tiles)
-            y_min = min(y for x, y, w, h in tiles)
-            x_max = max(x + w for x, y, w, h in tiles)
-            y_max = max(y + h for x, y, w, h in tiles)
+            x_min = min(t.x for t in tiles)
+            y_min = min(t.y for t in tiles)
+            x_max = max(t.x + t.w for t in tiles)
+            y_max = max(t.y + t.h for t in tiles)
 
             # Salva a região da grade para screenshots futuras
             self.grade_region = {
@@ -145,33 +156,59 @@ class Sensor:
         else:
             raise ValueError("Grade não encontrada. Quadrados detectados:", len(tiles))
 
-        return self.grade_region, tiles
-        # ERRO AQUI, OS TILES NÃO ESTÃO ORDENADOS
-        tiles = sorted(tiles, key=lambda t: (t[1], t[0]))
-        for i, (x, y, w, h) in enumerate(tiles):
+        return tiles
+
+    def _sort_tiles(self, screenshot: cv2.typing.MatLike, tiles: list[Tile]):
+        # Ordena primeiro por y (linha)
+        tiles = sorted(tiles, key=lambda t: t.y)
+
+        linhas = []
+        linha_atual = []
+        margem = 20  # tolerância vertical para considerar que dois tiles estão na mesma linha
+
+        for tile in tiles:
+            if not linha_atual:
+                linha_atual.append(tile)
+                continue
+
+            if abs(tile.y - linha_atual[0].y) <= margem:
+                linha_atual.append(tile)
+            else:
+                linhas.append(sorted(linha_atual, key=lambda t: t.x))
+                linha_atual = [tile]
+
+        if linha_atual:
+            linhas.append(sorted(linha_atual, key=lambda t: t.x))
+
+        # Junta todas as linhas ordenadas
+        tiles_ordenados = [tile for linha in linhas for tile in linha]
+
+        # Visualização com índice
+        for i, (x, y, w, h) in enumerate(tiles_ordenados):
             cv2.rectangle(screenshot, (x, y), (x + w, y + h), BLUE, 1)
             cx, cy = x + w // 2, y + h // 2
             cv2.putText(
                 screenshot,
                 str(i),
-                (cx - 10, cy + 10),  # deslocamento para centralizar melhor o texto
+                (cx - 10, cy + 10),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,  # tamanho da fonte
-                (0, 255, 255),  # cor (amarelo)
-                1,  # espessura
+                0.5,
+                (0, 255, 255),
+                1,
                 cv2.LINE_AA,
             )
-        debug.save_image(screenshot, "screenshot com quadrados")
-        return self.grade_region, tiles
 
-    def extrair_tiles(self, grade_img, quadrados, offset=(0, 0)):
+        debug.save_image(screenshot, "screenshot com quadrados ordenados")
+        return tiles_ordenados
+
+    def _extrair_tiles(self, screenshot, tiles, offset=(0, 0)):
         ox, oy = offset
 
         resultados_ocr = []
-        for x, y, w, h in quadrados:
+        for x, y, w, h in tiles:
             # Ajusta coordenadas relativas ao recorte da grade
-            tile = grade_img[(y - oy) : (y - oy + h), (x - ox) : (x - ox + w)]
-            texto = self._ocr_easyocr(tile)
+            tile = screenshot[(y - oy) : (y - oy + h), (x - ox) : (x - ox + w)]
+            texto = self.ler_texto(tile)
             resultados_ocr.append(texto)
         return np.array(resultados_ocr).reshape((4, 4))
 
