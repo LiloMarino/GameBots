@@ -215,11 +215,16 @@ class Sensor:
         tiles: list[Tile],
     ):
         gray = cv2.cvtColor(grid, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
+        # Threshold para números brancos
+        _, thresh_light = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
+        # Threshold para números pretos
+        _, thresh_dark = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV)
+        # Combinar as duas máscaras (OR bit a bit)
+        thresh_combined = cv2.bitwise_or(thresh_dark, thresh_light)
 
         resultados_ocr: list[int] = []
         for t in tiles:
-            tile_img = thresh[t.y : t.y + t.h, t.x : t.x + t.w]
+            tile_img = thresh_combined[t.y : t.y + t.h, t.x : t.x + t.w]
             debug.save_image(tile_img, f"tile_{t.x}_{t.y}")
             valor = self.ler_texto(tile_img)
             resultados_ocr.append(valor)
