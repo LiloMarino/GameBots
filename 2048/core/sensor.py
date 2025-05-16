@@ -88,15 +88,14 @@ class Sensor:
         return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
     def get_grid(self):
-        tiles = self.detectar_grade()
-        screenshot = self.get_screenshot()
-        tiles = self._sort_tiles(screenshot, tiles)
-        return self._extrair_tiles(tiles, screenshot)
+        grade, tiles = self.detectar_grade()
+        tiles = self._sort_tiles(grade, tiles)
+        return self._extrair_tiles(grade, tiles)
 
-    def _detectar_grade_cor(self) -> list[Tile]:
+    def _detectar_grade_cor(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
         pass
 
-    def _detectar_grade_canny_edge(self) -> list[Tile]:
+    def _detectar_grade_canny_edge(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
         screenshot = self.get_screenshot(self.grade_region)
         debug.save_image(screenshot, "screenshot")
 
@@ -151,14 +150,19 @@ class Sensor:
             }
             cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
 
+            # Atualiza coordenadas para ficarem relativas à grade
+            tiles = [Tile(t.x - x_min, t.y - y_min, t.w, t.h) for t in tiles]
+
             grade = screenshot[y_min:y_max, x_min:x_max]
             debug.save_image(grade, "grade")
         else:
             raise ValueError("Grade não encontrada. Quadrados detectados:", len(tiles))
 
-        return tiles
+        return grade, tiles
 
-    def _sort_tiles(self, screenshot: cv2.typing.MatLike, tiles: list[Tile]):
+    def _sort_tiles(
+        self, screenshot: cv2.typing.MatLike, tiles: list[Tile]
+    ) -> list[Tile]:
         # Ordena primeiro por y (linha)
         tiles = sorted(tiles, key=lambda t: t.y)
 
@@ -201,14 +205,16 @@ class Sensor:
         debug.save_image(screenshot, "screenshot com quadrados ordenados")
         return tiles_ordenados
 
-    def _extrair_tiles(self, screenshot, tiles, offset=(0, 0)):
-        ox, oy = offset
-
+    def _extrair_tiles(
+        self,
+        screenshot: cv2.typing.MatLike,
+        tiles: list[Tile],
+    ):
         resultados_ocr = []
-        for x, y, w, h in tiles:
-            # Ajusta coordenadas relativas ao recorte da grade
-            tile = screenshot[(y - oy) : (y - oy + h), (x - ox) : (x - ox + w)]
-            texto = self.ler_texto(tile)
+        for t in tiles:
+            tile_img = screenshot[t.y : t.y + t.h, t.x : t.x + t.w]
+            debug.save_image(tile_img, f"tile_{t.x}_{t.y}")
+            texto = self.ler_texto(tile_img)
             resultados_ocr.append(texto)
         return np.array(resultados_ocr).reshape((4, 4))
 
