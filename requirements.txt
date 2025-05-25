@@ -3,6 +3,7 @@ filelock==3.18.0
 fsspec==2025.3.2
 imageio==2.37.0
 Jinja2==3.1.6
+keyboard==0.13.5
 lazy_loader==0.4
 line_profiler==4.2.0
 MarkupSafe==3.0.2
@@ -22,6 +23,7 @@ PyMsgBox==1.0.9
 pyperclip==1.9.0
 PyRect==0.2.0
 PyScreeze==1.0.1
+pytesseract==0.3.13
 python-bidi==0.6.6
 pytweening==1.2.0
 PyYAML==6.0.2

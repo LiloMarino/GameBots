@@ -6,6 +6,7 @@ import easyocr
 import mss
 import numpy as np
 import pygetwindow as gw
+import pytesseract
 from core import debug
 from core.constants import BLUE, GREEN
 
@@ -215,7 +216,7 @@ class Sensor:
         self,
         grid: cv2.typing.MatLike,
         tiles: list[Tile],
-    ):
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.int64]]:
         gray = cv2.cvtColor(grid, cv2.COLOR_BGR2GRAY)
         # Threshold para números brancos
         _, thresh_light = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
@@ -237,7 +238,9 @@ class Sensor:
         return int(resultado[0]) if resultado else 0
 
     def _ocr_tesseract(self, img: cv2.typing.MatLike) -> int:
-        pass
+        config = "--psm 8 --oem 3 -c tessedit_char_whitelist=0123456789"
+        texto = pytesseract.image_to_string(img, config=config).strip()
+        return int(texto) if texto else 0
 
     def __del__(self):
         self.sct.close()
