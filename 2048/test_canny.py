@@ -2,60 +2,75 @@ import cv2
 import numpy as np
 
 # Carrega imagem em escala de cinza
-original_img = cv2.imread("screenshot gray.png", cv2.IMREAD_GRAYSCALE)
+original_img = cv2.imread("debug/screenshot gray.png", cv2.IMREAD_GRAYSCALE)
 
 
 def nothing(x):
     pass
 
 
-# Janela de controle
 cv2.namedWindow("Canny Tuner")
-cv2.createTrackbar("Blur Kernel", "Canny Tuner", 1, 20, nothing)
-cv2.createTrackbar("Blur Sigma", "Canny Tuner", 0, 100, nothing)
-cv2.createTrackbar("Threshold 1", "Canny Tuner", 5, 255, nothing)
-cv2.createTrackbar("Threshold 2", "Canny Tuner", 10, 255, nothing)
+cv2.createTrackbar("Blur Kernel", "Canny Tuner", 5, 20, nothing)
+cv2.createTrackbar("Blur Sigma", "Canny Tuner", 1, 50, nothing)
+cv2.createTrackbar("Threshold1", "Canny Tuner", 50, 255, nothing)
+cv2.createTrackbar("Threshold2", "Canny Tuner", 150, 255, nothing)
+cv2.createTrackbar("Morph W", "Canny Tuner", 7, 20, nothing)
+cv2.createTrackbar("Morph H", "Canny Tuner", 7, 20, nothing)
+cv2.createTrackbar("Iterations", "Canny Tuner", 2, 10, nothing)
 
 while True:
-    # Trackbar configs
-    ksize = cv2.getTrackbarPos("Blur Kernel", "Canny Tuner")
-    sigma = cv2.getTrackbarPos("Blur Sigma", "Canny Tuner")
-    t1 = cv2.getTrackbarPos("Threshold 1", "Canny Tuner")
-    t2 = cv2.getTrackbarPos("Threshold 2", "Canny Tuner")
+    # Trackbars
+    k = cv2.getTrackbarPos("Blur Kernel", "Canny Tuner")
+    s = cv2.getTrackbarPos("Blur Sigma", "Canny Tuner")
+    t1 = cv2.getTrackbarPos("Threshold1", "Canny Tuner")
+    t2 = cv2.getTrackbarPos("Threshold2", "Canny Tuner")
+    mw = cv2.getTrackbarPos("Morph W", "Canny Tuner")
+    mh = cv2.getTrackbarPos("Morph H", "Canny Tuner")
+    it = cv2.getTrackbarPos("Iterations", "Canny Tuner")
 
-    # Garantir kernel ímpar e válido
-    ksize = max(1, ksize)
-    if ksize % 2 == 0:
-        ksize += 1
+    k = max(1, k)
+    if k % 2 == 0:
+        k += 1
+    s = max(1, s)
+    mw, mh = max(1, mw), max(1, mh)
+    it = max(1, it)
 
-    # --- Abordagem 1: Gaussian + Canny puro
-    blurred = cv2.GaussianBlur(original_img, (ksize, ksize), sigmaX=sigma)
-    t2 = max(t1 + 1, t2)
-    canny_puro = cv2.Canny(blurred, t1, t2)
+    # Gaussian Blur
+    blurred = cv2.GaussianBlur(original_img, (k, k), sigmaX=s)
 
-    # --- Abordagem 2: + Morph Close
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    closed = cv2.morphologyEx(canny_puro, cv2.MORPH_CLOSE, kernel)
+    # Canny
+    edges = cv2.Canny(blurred, t1, max(t1 + 1, t2))
 
-    # --- Abordagem 3: + Dilate → Erode
-    dilated = cv2.dilate(canny_puro, kernel, iterations=1)
-    morphed = cv2.erode(dilated, kernel, iterations=1)
+    # Morph close
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (mw, mh))
+    closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=it)
 
-    # --- Abordagem 4: Bilateral + Canny com thresholds automáticos
-    bilateral = cv2.bilateralFilter(original_img, d=9, sigmaColor=75, sigmaSpace=75)
-    v = np.median(bilateral)
-    auto_t1 = int(max(0, 0.66 * v))
-    auto_t2 = int(min(255, 1.33 * v))
-    auto_canny = cv2.Canny(bilateral, auto_t1, auto_t2)
+    # Contornos
+    contours, _ = cv2.findContours(closed, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    contoured_img = cv2.cvtColor(original_img, cv2.COLOR_GRAY2BGR)
 
-    # Mostrar resultados lado a lado
-    cv2.imshow("Canny Puro", canny_puro)
-    cv2.imshow("Morph Close", closed)
-    cv2.imshow("Dilate -> Erode", morphed)
-    cv2.imshow("Auto Canny + Bilateral", auto_canny)
+    count = 0
+    for c in contours:
+        if cv2.contourArea(c) > 1000:  # Ignorar ruídos
+            cv2.drawContours(contoured_img, [c], -1, (0, 255, 0), 2)
+            count += 1
 
-    key = cv2.waitKey(1) & 0xFF
-    if key == 27:  # ESC
+    cv2.putText(
+        contoured_img,
+        f"Contornos detectados: {count}",
+        (10, 25),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        (255, 0, 0),
+        2,
+    )
+
+    # Exibir
+    cv2.imshow("Canny", edges)
+    cv2.imshow("Closed", closed)
+    cv2.imshow("Contornos", contoured_img)
+
+    if cv2.waitKey(1) & 0xFF == 27:
         break
 
 cv2.destroyAllWindows()
