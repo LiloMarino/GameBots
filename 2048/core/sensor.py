@@ -106,16 +106,19 @@ class Sensor:
         debug.save_image(gray, "screenshot gray")
 
         # Desfoque Gaussiano para reduzir o ruído
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        blur = cv2.GaussianBlur(gray, (3, 3), 0)
         debug.save_image(blur, "screenshot gaussian blur")
 
         # Detectar bordas com Canny Edge Detection
         edges = cv2.Canny(blur, 5, 10)
         debug.save_image(edges, "screenshot edges")
 
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+
         # Detectar contornos
         contours, hierarchy = cv2.findContours(
-            edges, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+            closed, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
         )
         img_contorns = cv2.drawContours(
             cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR), contours, -1, GREEN, 1
