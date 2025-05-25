@@ -10,12 +10,12 @@ def nothing(x):
 
 
 cv2.namedWindow("Canny Tuner")
-cv2.createTrackbar("Blur Kernel", "Canny Tuner", 5, 20, nothing)
-cv2.createTrackbar("Blur Sigma", "Canny Tuner", 1, 50, nothing)
-cv2.createTrackbar("Threshold1", "Canny Tuner", 50, 255, nothing)
-cv2.createTrackbar("Threshold2", "Canny Tuner", 150, 255, nothing)
-cv2.createTrackbar("Morph W", "Canny Tuner", 7, 20, nothing)
-cv2.createTrackbar("Morph H", "Canny Tuner", 7, 20, nothing)
+cv2.createTrackbar("Blur Kernel", "Canny Tuner", 3, 20, nothing)
+cv2.createTrackbar("Blur Sigma", "Canny Tuner", 0, 50, nothing)
+cv2.createTrackbar("Threshold1", "Canny Tuner", 5, 255, nothing)
+cv2.createTrackbar("Threshold2", "Canny Tuner", 10, 255, nothing)
+cv2.createTrackbar("Morph W", "Canny Tuner", 3, 20, nothing)
+cv2.createTrackbar("Morph H", "Canny Tuner", 3, 20, nothing)
 cv2.createTrackbar("Iterations", "Canny Tuner", 2, 10, nothing)
 
 while True:

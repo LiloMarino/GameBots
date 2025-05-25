@@ -93,6 +93,35 @@ class Sensor:
         tiles = self._sort_tiles(grade.copy(), tiles)
         return self._extrair_tiles(grade, tiles)
 
+    def match_and_click_template(
+        self, template_path: str, threshold: float = 0.8
+    ) -> tuple[int, int] | None:
+        """Procura por um template na janela do jogo e clica nele se encontrar.
+
+        Args:
+            template_path (str): Caminho para a imagem do template.
+            threshold (float): Limite mínimo de similaridade. Defaults to 0.8.
+
+        Returns:
+            tuple[int, int] | None: Coordenadas clicadas ou None se não encontrado.
+        """
+        screenshot = self.get_screenshot()
+        template = cv2.imread(template_path, cv2.IMREAD_COLOR)
+
+        if template is None:
+            raise FileNotFoundError(f"Template não encontrado: {template_path}")
+
+        result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+        if max_val >= threshold:
+            template_h, template_w = template.shape[:2]
+            click_x = self.region["left"] + max_loc[0] + template_w // 2
+            click_y = self.region["top"] + max_loc[1] + template_h // 2
+            return (click_x, click_y)
+        else:
+            return None
+
     def _detectar_grade_cor(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
         pass
 
@@ -106,19 +135,19 @@ class Sensor:
         debug.save_image(gray, "screenshot gray")
 
         # Desfoque Gaussiano para reduzir o ruído
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        debug.save_image(blur, "screenshot gaussian blur")
+        # blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        # debug.save_image(blur, "screenshot gaussian blur")
 
         # Detectar bordas com Canny Edge Detection
-        edges = cv2.Canny(blur, 5, 10)
+        edges = cv2.Canny(gray, 5, 10)
         debug.save_image(edges, "screenshot edges")
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        # closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
 
         # Detectar contornos
         contours, hierarchy = cv2.findContours(
-            closed, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+            edges, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
         )
         img_contorns = cv2.drawContours(
             cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR), contours, -1, GREEN, 1
