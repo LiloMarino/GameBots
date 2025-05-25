@@ -34,89 +34,94 @@ threading.Thread(
 ).start()
 logger.info(f"Pressione {KEY} para pausar ou retomar o bot.")
 
-# --- LOOP PRINCIPAL DO BOT ---
+
+def reiniciar_partida():
+    coords = sensor.match_template("new_game.png")
+    if coords:
+        act.click(*coords)
+        logger.info("Clicou em New Game para reiniciar.")
+        time.sleep(0.2)
+        return True
+    else:
+        logger.error("Botão 'New Game' não encontrado. Encerrando...")
+        return False
+
+
+# --- INICIALIZAÇÃO ---
 sensor = Sensor("Google Chrome")
 think = Think()
 act = Act()
 partida = 0
 
+# Garante que começamos na tela inicial
 while True:
-    coords = sensor.match_template("2048_logo.png")
-    if coords is not None:
-        act.click(*coords)
+    if reiniciar_partida():
         break
-    else:
-        time.sleep(0.5)
-        continue
 
+# --- LOOP DE PARTIDAS ---
 while partida < MAX_PARTIDAS:
     if not bot_ativo:
         time.sleep(0.5)
         continue
 
-    partida += 1
     logger.info(f"Iniciando partida {partida}...")
-    movimentos_realizados = 0
+    movimentos = 0
     ultimo_board = None
-    time.sleep(0.2)
-    while movimentos_realizados < MAX_MOVIMENTOS:
+
+    # Loop de movimentos
+    while movimentos < MAX_MOVIMENTOS:
         if not bot_ativo:
             time.sleep(0.5)
             continue
 
         try:
             board = sensor.get_grid()
-            ultimo_board = board
         except Exception as e:
             falhas_grid += 1
             logger.error(
-                f"[Partida {partida}] Falha ao detectar grid. Total de falhas: {falhas_grid}"
+                f"[Partida {partida}] Falha ao detectar grid ({falhas_grid}ª): {e}"
             )
-            logger.debug(str(e))
 
+            # Estatísticas do último estado válido
             if ultimo_board is not None:
-                maior_num = int(np.max(board))
-                maiores_numeros.append(maior_num)
-                logger.info(f"Maior número do último board: {maior_num}")
+                maior = int(np.max(ultimo_board))
+                maiores_numeros.append(maior)
+                logger.info(f"Maior número do último board válido: {maior}")
+                score = sensor.extrair_score()
+                pontuacoes.append(score)
+                logger.info(f"Score extraído: {score}")
 
-            coords = sensor.match_template("new_game.png")
-            if coords is not None:
-                act.click(*coords)
-                logger.info("Recomeçando partida")
+            # Reinicia partida
+            if reiniciar_partida():
+                break
             else:
-                logger.warning("Botão 'New Game' não encontrado. Encerrando...")
-                exit()
-            break
+                exit(1)
 
-        movimento, next_board = think.best_move(board)
-        if movimento:
-            act.executar_jogada(movimento)
-            movimentos_realizados += 1
-            logger.info(f"Movimento {movimentos_realizados}/{MAX_MOVIMENTOS}")
+        move, next_board = think.best_move(board)
+        ultimo_board = next_board
+        if move:
+            act.executar_jogada(move)
+            movimentos += 1
+            logger.info(f"Movimento {movimentos}/{MAX_MOVIMENTOS}")
             time.sleep(0.2)
         else:
+            # partida terminou por sem-movimentos
             logger.info(f"Fim de jogo detectado na partida {partida}")
+            maior = int(np.max(board))
+            maiores_numeros.append(maior)
+            logger.info(f"Maior número alcançado: {maior}")
 
-            maior_num = int(np.max(board))
-            maiores_numeros.append(maior_num)
-            logger.info(f"Maior número alcançado nesta partida: {maior_num}")
+            score = sensor.extrair_score()
+            pontuacoes.append(score)
+            logger.info(f"Score extraído: {score}")
 
-            pontuacao = sensor.extrair_score()
-            pontuacoes.append(pontuacao)
-
-            coords = sensor.match_template("try_again.png")
-            if coords is not None:
-                act.click(*coords)
-                logger.info("Recomeçando partida")
+            # Reinicia sempre com New Game
+            if reiniciar_partida():
+                break
             else:
-                logger.warning("Botão 'Try Again' não encontrado. Encerrando...")
-                exit()
-            break
+                exit(1)
 
-logger.info(f"Limite de {MAX_PARTIDAS} partidas atingido.")
-
-# --- RESUMO FINAL ---
-logger.info("Resumo das estatísticas:")
-logger.info(f"Total de falhas na detecção de grid: {falhas_grid}")
+logger.info(f"Limite de {MAX_PARTIDAS} partidas atingido. Encerrando bot.")
+logger.info(f"Total de falhas de grid: {falhas_grid}")
 logger.info(f"Maiores números por partida: {maiores_numeros}")
 logger.info(f"Pontuações detectadas: {pontuacoes}")
