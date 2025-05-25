@@ -9,6 +9,7 @@ import pygetwindow as gw
 import pytesseract
 from core import debug
 from core.constants import BLUE, GREEN
+from logger_config import logger
 
 
 # Tipos
@@ -121,6 +122,62 @@ class Sensor:
             return (click_x, click_y)
         else:
             return None
+
+    def extrair_score(self) -> int:
+        screenshot = self.get_screenshot()
+
+        # Carrega template "score"
+        template = cv2.imread("score.png", cv2.IMREAD_COLOR)
+        h, w = template.shape[:2]
+
+        # Aplica template matching
+        result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        if max_val < 0.8:
+            logger.warning("Template 'score' não encontrado.")
+            return -1
+
+        # Calcula coordenadas da ROI abaixo do template
+        x, y = max_loc
+        roi_y = y + h - 5
+        roi_h = 35
+        roi_w = w + 30
+        roi_x = x - 15
+
+        roi = screenshot[roi_y : roi_y + roi_h, roi_x : roi_x + roi_w]
+        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        _, thresh_light = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
+        cv2.bitwise_not(thresh_light, thresh_light)
+        contours, _ = cv2.findContours(
+            thresh_light, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        # Encontra o maior contorno (deve ser o quadrado do número)
+        if contours:
+            largest_contour = max(contours, key=cv2.contourArea)
+            x, y, w, h = cv2.boundingRect(largest_contour)
+
+            # Recorta só a área escura (onde está o número)
+            number_area = thresh_light[y : y + h, x : x + w]
+            cv2.bitwise_not(number_area, number_area)
+
+            scale_factor = 4
+            resized = cv2.resize(
+                number_area,
+                None,
+                fx=scale_factor,
+                fy=scale_factor,
+                interpolation=cv2.INTER_CUBIC,
+            )
+            debug.save_image(resized, "score_clean")
+
+        # Faz OCR somente na ROI
+        result = self.reader.readtext(resized, detail=0, paragraph=False)
+        if result:
+            return int(result[0])
+
+        logger.error("Não foi possível extrair score via OCR.")
+        return -1
 
     def _detectar_grade_cor(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
         pass

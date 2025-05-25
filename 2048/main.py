@@ -2,6 +2,7 @@ import threading
 import time
 
 import keyboard
+import numpy as np
 from core.act import Act
 from core.sensor import Sensor
 from core.think import Think
@@ -12,6 +13,12 @@ KEY = "F8"
 MAX_PARTIDAS = 20
 MAX_MOVIMENTOS = 20
 bot_ativo = False
+
+# --- ESTATÍSTICAS ---
+falhas_grid = 0
+maiores_numeros = []
+pontuacoes = []
+ultimo_board = None
 
 
 def toggle_bot():
@@ -41,6 +48,7 @@ while partida < MAX_PARTIDAS:
     partida += 1
     logger.info(f"Iniciando partida {partida}...")
     movimentos_realizados = 0
+    ultimo_board = None
 
     while movimentos_realizados < MAX_MOVIMENTOS:
         if not bot_ativo:
@@ -49,9 +57,19 @@ while partida < MAX_PARTIDAS:
 
         try:
             board = sensor.get_grid()
+            ultimo_board = board
         except Exception as e:
-            logger.error(f"Erro na partida {partida}")
-            logger.error(str(e))
+            falhas_grid += 1
+            logger.error(
+                f"[Partida {partida}] Falha ao detectar grid. Total de falhas: {falhas_grid}"
+            )
+            logger.debug(str(e))
+
+            if ultimo_board is not None:
+                maior_num = int(np.max(board))
+                maiores_numeros.append(maior_num)
+                logger.info(f"Maior número do último board: {maior_num}")
+
             coords = sensor.match_template("new_game.png")
             if coords is not None:
                 act.click(*coords)
@@ -69,6 +87,14 @@ while partida < MAX_PARTIDAS:
             time.sleep(0.2)
         else:
             logger.info(f"Fim de jogo detectado na partida {partida}")
+
+            maior_num = int(np.max(board))
+            maiores_numeros.append(maior_num)
+            logger.info(f"Maior número alcançado nesta partida: {maior_num}")
+
+            pontuacao = sensor.extrair_score()
+            pontuacoes.append(pontuacao)
+
             coords = sensor.match_template("try_again.png")
             if coords is not None:
                 act.click(*coords)
@@ -78,4 +104,10 @@ while partida < MAX_PARTIDAS:
                 exit()
             break
 
-logger.info(f"Limite de {MAX_PARTIDAS} partidas atingido. Encerrando bot.")
+logger.info(f"Limite de {MAX_PARTIDAS} partidas atingido.")
+
+# --- RESUMO FINAL ---
+logger.info("Resumo das estatísticas:")
+logger.info(f"Total de falhas na detecção de grid: {falhas_grid}")
+logger.info(f"Maiores números por partida: {maiores_numeros}")
+logger.info(f"Pontuações detectadas: {pontuacoes}")
