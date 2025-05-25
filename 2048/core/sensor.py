@@ -93,7 +93,7 @@ class Sensor:
         tiles = self._sort_tiles(grade.copy(), tiles)
         return self._extrair_tiles(grade, tiles)
 
-    def match_and_click_template(
+    def match_template(
         self, template_path: str, threshold: float = 0.8
     ) -> tuple[int, int] | None:
         """Procura por um template na janela do jogo e clica nele se encontrar.
