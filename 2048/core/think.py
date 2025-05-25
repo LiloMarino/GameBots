@@ -1,4 +1,5 @@
 import numpy as np
+from logger_config import logger
 
 
 class Think:
@@ -54,24 +55,24 @@ class Think:
             "right": self.move_right(board),
         }
 
-        print("\nEstado atual do tabuleiro:")
-        print(board)
+        logger.debug("\nEstado atual do tabuleiro:")
+        logger.debug(board)
 
         # Filtra os movimentos que geram mudança
         valid_moves = {}
         for move, new_board in moves.items():
             if not np.array_equal(board, new_board):
                 valid_moves[move] = new_board
-                print(f"\nMovimento: {move}")
-                print(new_board)
+                logger.debug(f"\nMovimento: {move}")
+                logger.debug(new_board)
             else:
-                print(f"\nMovimento: {move} (inválido — sem mudança)")
+                logger.debug(f"\nMovimento: {move} (inválido — sem mudança)")
 
         if not valid_moves:
-            print("\nNenhum movimento possível. Game over.")
-            return None
+            logger.info("\nNenhum movimento possível. Game over.")
+            return None, None
 
         # Escolhe o melhor baseado no número de espaços vazios
         best = max(valid_moves.items(), key=lambda item: self.count_empty(item[1]))
-        print(f"\n>> Melhor movimento escolhido: {best[0]}")
-        return best[0]
+        logger.info(f"\n>> Melhor movimento escolhido: {best[0]}")
+        return best

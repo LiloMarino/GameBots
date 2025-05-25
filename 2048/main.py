@@ -46,6 +46,7 @@ while partida < MAX_PARTIDAS:
         if not bot_ativo:
             time.sleep(0.5)
             continue
+
         try:
             board = sensor.get_grid()
         except Exception as e:
@@ -60,7 +61,7 @@ while partida < MAX_PARTIDAS:
                 exit()
             break
 
-        movimento = think.best_move(board)
+        movimento, next_board = think.best_move(board)
         if movimento:
             act.executar_jogada(movimento)
             movimentos_realizados += 1
