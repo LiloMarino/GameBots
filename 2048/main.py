@@ -10,9 +10,9 @@ from logger_config import logger
 
 # --- CONFIGURAÇÕES ---
 KEY = "F8"
-MAX_PARTIDAS = 20
+MAX_PARTIDAS = 5
 MAX_MOVIMENTOS = 20
-bot_ativo = False
+bot_ativo = True
 
 # --- ESTATÍSTICAS ---
 falhas_grid = 0
@@ -40,6 +40,15 @@ think = Think()
 act = Act()
 partida = 0
 
+while True:
+    coords = sensor.match_template("2048_logo.png")
+    if coords is not None:
+        act.click(*coords)
+        break
+    else:
+        time.sleep(0.5)
+        continue
+
 while partida < MAX_PARTIDAS:
     if not bot_ativo:
         time.sleep(0.5)
@@ -49,7 +58,7 @@ while partida < MAX_PARTIDAS:
     logger.info(f"Iniciando partida {partida}...")
     movimentos_realizados = 0
     ultimo_board = None
-
+    time.sleep(0.2)
     while movimentos_realizados < MAX_MOVIMENTOS:
         if not bot_ativo:
             time.sleep(0.5)
