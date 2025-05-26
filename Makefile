@@ -5,8 +5,8 @@ PASTA=2048
 MAIN=main.py
 
 # Nome dos arquivos de saída
-CPROFILE_OUT=saida.prof
-LINEPROFILE_OUT=saida.lprof
+CPROFILE_OUT=../saida.prof
+LINEPROFILE_OUT=../saida.lprof
 
 # ---------- CProfile ----------
 snakeviz: cprofile

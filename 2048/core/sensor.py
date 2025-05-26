@@ -317,6 +317,8 @@ class Sensor:
         resultados_ocr: list[int] = []
         for t in tiles:
             tile_img = thresh_combined[t.y : t.y + t.h, t.x : t.x + t.w]
+            # Padroniza tamanho das imagens
+            tile_img = cv2.resize(tile_img, (64, 64), interpolation=cv2.INTER_CUBIC)
             debug.save_image(tile_img, f"tile_{t.x}_{t.y}")
             valor = self.ler_texto(tile_img)
             resultados_ocr.append(valor)
