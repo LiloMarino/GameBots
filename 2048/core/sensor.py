@@ -134,7 +134,7 @@ class Sensor:
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
         if max_val < 0.8:
-            logger.warning("Template 'score' não encontrado.")
+            logger.warning(f"Template 'score' não encontrado - {max_val}")
             return -1
 
         # Calcula coordenadas da ROI abaixo do template

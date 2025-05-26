@@ -47,6 +47,23 @@ def reiniciar_partida():
         return False
 
 
+def registrar_estatisticas(board: np.ndarray | None):
+    if board is not None:
+        try:
+            maior = int(np.max(board))
+            maiores_numeros.append(maior)
+            logger.info(f"Maior número alcançado: {maior}")
+        except Exception as e:
+            logger.warning(f"Erro ao acessar board: {e}")
+    try:
+        time.sleep(0.2)
+        score = sensor.extrair_score()
+        pontuacoes.append(score)
+        logger.info(f"Score extraído: {score}")
+    except Exception as e:
+        logger.warning(f"Falha ao extrair score. {e}")
+
+
 # --- INICIALIZAÇÃO ---
 sensor = Sensor("Google Chrome")
 think = Think()
@@ -59,20 +76,17 @@ while True:
         break
 
 # --- LOOP DE PARTIDAS ---
-while partida < MAX_PARTIDAS:
-    if not bot_ativo:
+for partida in range(1, MAX_PARTIDAS + 1):
+    while not bot_ativo:
         time.sleep(0.5)
-        continue
 
     logger.info(f"Iniciando partida {partida}...")
     movimentos = 0
     ultimo_board = None
 
-    # Loop de movimentos
     while movimentos < MAX_MOVIMENTOS:
-        if not bot_ativo:
+        while not bot_ativo:
             time.sleep(0.5)
-            continue
 
         try:
             board = sensor.get_grid()
@@ -81,21 +95,8 @@ while partida < MAX_PARTIDAS:
             logger.error(
                 f"[Partida {partida}] Falha ao detectar grid ({falhas_grid}ª): {e}"
             )
-
-            # Estatísticas do último estado válido
-            if ultimo_board is not None:
-                maior = int(np.max(ultimo_board))
-                maiores_numeros.append(maior)
-                logger.info(f"Maior número do último board válido: {maior}")
-                score = sensor.extrair_score()
-                pontuacoes.append(score)
-                logger.info(f"Score extraído: {score}")
-
-            # Reinicia partida
-            if reiniciar_partida():
-                break
-            else:
-                exit(1)
+            registrar_estatisticas(ultimo_board)
+            break
 
         move, next_board = think.best_move(board)
         ultimo_board = next_board
@@ -105,21 +106,19 @@ while partida < MAX_PARTIDAS:
             logger.info(f"Movimento {movimentos}/{MAX_MOVIMENTOS}")
             time.sleep(0.2)
         else:
-            # partida terminou por sem-movimentos
             logger.info(f"Fim de jogo detectado na partida {partida}")
-            maior = int(np.max(board))
-            maiores_numeros.append(maior)
-            logger.info(f"Maior número alcançado: {maior}")
+            registrar_estatisticas(board)
+            break
+    else:
+        # Se o loop terminou sem break, atingimos o limite de movimentos
+        logger.info(
+            f"Partida {partida} atingiu o limite de {MAX_MOVIMENTOS} movimentos."
+        )
+        registrar_estatisticas(ultimo_board)
 
-            score = sensor.extrair_score()
-            pontuacoes.append(score)
-            logger.info(f"Score extraído: {score}")
-
-            # Reinicia sempre com New Game
-            if reiniciar_partida():
-                break
-            else:
-                exit(1)
+    if not reiniciar_partida():
+        logger.critical("Impossível reiniciar partida. Encerrando.")
+        exit(1)
 
 logger.info(f"Limite de {MAX_PARTIDAS} partidas atingido. Encerrando bot.")
 logger.info(f"Total de falhas de grid: {falhas_grid}")
