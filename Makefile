@@ -1,7 +1,8 @@
 # Makefile
 
 # Caminho do script principal
-MAIN=2048/main.py
+PASTA=2048
+MAIN=main.py
 
 # Nome dos arquivos de saída
 CPROFILE_OUT=saida.prof
@@ -12,11 +13,11 @@ snakeviz: cprofile
 	snakeviz $(CPROFILE_OUT)
 
 cprofile:
-	python -m cProfile -o $(CPROFILE_OUT) $(MAIN)
+	cd $(PASTA) && python -m cProfile -o $(CPROFILE_OUT) $(MAIN)
 
 # ---------- Line Profiler ----------
 lineprofile:
-	kernprof -l -v -o $(LINEPROFILE_OUT) $(MAIN)
+	cd $(PASTA) && kernprof -l -v -o $(LINEPROFILE_OUT) $(MAIN)
 
 lineprofile-view:
 	python -m line_profiler $(LINEPROFILE_OUT)

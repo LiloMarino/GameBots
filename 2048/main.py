@@ -18,6 +18,7 @@ bot_ativo = True
 falhas_grid = 0
 maiores_numeros = []
 pontuacoes = []
+tempos_partida = []
 ultimo_board = None
 
 
@@ -83,6 +84,7 @@ for partida in range(1, MAX_PARTIDAS + 1):
     logger.info(f"Iniciando partida {partida}...")
     movimentos = 0
     ultimo_board = None
+    inicio = time.time()
 
     while movimentos < MAX_MOVIMENTOS:
         while not bot_ativo:
@@ -116,11 +118,17 @@ for partida in range(1, MAX_PARTIDAS + 1):
         )
         registrar_estatisticas(ultimo_board)
 
+    duracao = time.time() - inicio
+    tempos_partida.append(duracao)
+    logger.info(f"Duração da partida {partida}: {duracao:.2f} segundos")
+
     if not reiniciar_partida():
         logger.critical("Impossível reiniciar partida. Encerrando.")
         exit(1)
 
+# --- ESTATÍSTICAS FINAIS ---
 logger.info(f"Limite de {MAX_PARTIDAS} partidas atingido. Encerrando bot.")
 logger.info(f"Total de falhas de grid: {falhas_grid}")
 logger.info(f"Maiores números por partida: {maiores_numeros}")
 logger.info(f"Pontuações detectadas: {pontuacoes}")
+logger.info(f"Tempos por partida (s): {[f'{t:.2f}' for t in tempos_partida]}")
