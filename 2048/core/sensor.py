@@ -8,7 +8,7 @@ import numpy as np
 import pygetwindow as gw
 import pytesseract
 from core import debug
-from core.constants import BLUE, GREEN
+from core.constants import BLUE, GREEN, TILE_SIZE
 from logger_config import logger
 
 
@@ -23,6 +23,7 @@ class Tile(NamedTuple):
 class OCRMethod(Enum):
     TESSERACT = auto()
     EASYOCR = auto()
+    TESSERACT_BATCH = auto()
 
 
 class GradeMethod(Enum):
@@ -45,6 +46,7 @@ class Sensor:
         self.ler_texto = {
             OCRMethod.EASYOCR: self._ocr_easyocr,
             OCRMethod.TESSERACT: self._ocr_tesseract,
+            OCRMethod.TESSERACT_BATCH: self._ocr_tesseract_batch,
         }.get(ocr_method, self._ocr_easyocr)
         self.detectar_grade = {
             GradeMethod.CANNY: self._detectar_grade_canny_edge,
@@ -314,14 +316,17 @@ class Sensor:
         # Combinar as duas máscaras (OR bit a bit)
         thresh_combined = cv2.bitwise_or(thresh_dark, thresh_light)
 
-        resultados_ocr: list[int] = []
-        for t in tiles:
-            tile_img = thresh_combined[t.y : t.y + t.h, t.x : t.x + t.w]
-            # Padroniza tamanho das imagens
-            tile_img = cv2.resize(tile_img, (64, 64), interpolation=cv2.INTER_CUBIC)
-            debug.save_image(tile_img, f"tile_{t.x}_{t.y}")
-            valor = self.ler_texto(tile_img)
-            resultados_ocr.append(valor)
+        if self.ler_texto == self._ocr_tesseract_batch:
+            resultados_ocr = self._ocr_tesseract_batch(thresh_combined, tiles)
+        else:
+            resultados_ocr: list[int] = []
+            for t in tiles:
+                tile_img = thresh_combined[t.y : t.y + t.h, t.x : t.x + t.w]
+                # Padroniza tamanho das imagens
+                tile_img = cv2.resize(tile_img, (64, 64), interpolation=cv2.INTER_CUBIC)
+                debug.save_image(tile_img, f"tile_{t.x}_{t.y}")
+                valor = self.ler_texto(tile_img)
+                resultados_ocr.append(valor)
         return np.array(resultados_ocr, dtype=int).reshape((4, 4))
 
     def _ocr_easyocr(self, img: cv2.typing.MatLike) -> int:
@@ -332,6 +337,35 @@ class Sensor:
         config = "--psm 8 --oem 3 -c tessedit_char_whitelist=0123456789"
         texto = pytesseract.image_to_string(img, config=config).strip()
         return int(texto) if texto else 0
+
+    def _ocr_tesseract_batch(
+        self, img: cv2.typing.MatLike, tiles: list[Tile]
+    ) -> list[int]:
+        config = "--psm 6 --oem 3 -c tessedit_char_whitelist=0123456789"
+
+        data = pytesseract.image_to_data(
+            img, config=config, output_type=pytesseract.Output.DICT
+        )
+        resultados: list[tuple[tuple[int, int], int]] = []
+        n = len(data["text"])
+        for i in range(n):
+            txt = data["text"][i].strip()
+            if txt.isdigit():
+                # pega o centro do box
+                x = data["left"][i] + data["width"][i] // 2
+                y = data["top"][i] + data["height"][i] // 2
+                resultados.append(((x, y), int(txt)))
+
+        grid_vals = [0] * len(tiles)
+        for (cx, cy), val in resultados:
+            # cx, cy vêm em coords relativas a grid
+            for idx, t in enumerate(tiles):
+                # se o centro OCR cai dentro do tile
+                if t.x <= cx <= t.x + t.w and t.y <= cy <= t.y + t.h:
+                    grid_vals[idx] = val
+                    break
+
+        return grid_vals
 
     def __del__(self):
         self.sct.close()
