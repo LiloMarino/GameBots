@@ -3,15 +3,13 @@ import logging
 __all__ = ["logger"]
 
 
-def setup_logger(
-    nome_log: str = "bot_logger", log_file: str = "bot.log"
-) -> logging.Logger:
+def setup_logger(nome_log: str = "BOT", log_file: str = "bot.log") -> logging.Logger:
     logger = logging.getLogger(nome_log)
     logger.setLevel(logging.INFO)
     logger.propagate = False  # Evita mensagens duplicadas
 
     if not logger.handlers:
-        formatter = logging.Formatter("[BOT] [%(levelname)s] %(message)s")
+        formatter = logging.Formatter("[%(name)s] [%(levelname)s] %(message)s")
 
         # Handler para console
         console_handler = logging.StreamHandler()
