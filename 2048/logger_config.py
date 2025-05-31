@@ -7,7 +7,7 @@ def setup_logger(
     nome_log: str = "bot_logger", log_file: str = "bot.log"
 ) -> logging.Logger:
     logger = logging.getLogger(nome_log)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logger.propagate = False  # Evita mensagens duplicadas
 
     if not logger.handlers:

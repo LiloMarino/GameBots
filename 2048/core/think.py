@@ -69,10 +69,10 @@ class Think:
                 logger.debug(f"Movimento: {move} (inválido — sem mudança)")
 
         if not valid_moves:
-            logger.info("Nenhum movimento possível. Game over.")
+            logger.debug("Nenhum movimento possível. Game over.")
             return None, None
 
         # Escolhe o melhor baseado no número de espaços vazios
         best = max(valid_moves.items(), key=lambda item: self.count_empty(item[1]))
-        logger.info(f">> Melhor movimento escolhido: {best[0]}")
+        logger.debug(f">> Melhor movimento escolhido: {best[0]}")
         return best
