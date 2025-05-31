@@ -202,51 +202,57 @@ class Sensor:
 
         # Detecta contornos
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        img_contorns = cv2.drawContours(screenshot.copy(), contours, -1, GREEN, 3)
+        img_contorns = cv2.drawContours(screenshot.copy(), contours, -1, GREEN, 2)
         debug.save_image(img_contorns, "screenshot contornos 1")
 
         # Obtém o contorno de maior área (provavelmente a grid central)
         biggest = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(biggest)
+        x_grade, y_grade, w_grade, h_grade = cv2.boundingRect(biggest)
 
         # Salva a região da grade (em coordenadas absolutas da tela)
         if not self.grade_region:
             MARGEM = 20
             self.grade_region = {
-                "top": self.region["top"] + y - MARGEM,
-                "left": self.region["left"] + x - MARGEM,
-                "width": w + 2 * MARGEM,
-                "height": h + 2 * MARGEM,
+                "top": self.region["top"] + y_grade - MARGEM,
+                "left": self.region["left"] + x_grade - MARGEM,
+                "width": w_grade + 2 * MARGEM,
+                "height": h_grade + 2 * MARGEM,
             }
 
-        cv2.rectangle(screenshot, (x, y), (x + w, y + h), GREEN, 3)
+        cv2.rectangle(
+            screenshot,
+            (x_grade, y_grade),
+            (x_grade + w_grade, y_grade + h_grade),
+            GREEN,
+            3,
+        )
 
         # Recorta a grade
-        grade = original[y : y + h, x : x + w]
+        grade = original[y_grade : y_grade + h_grade, x_grade : x_grade + w_grade]
         debug.save_image(screenshot, "screenshot grade")
         debug.save_image(grade, "grade")
 
+        # Obtém os contornos dos tiles
+        mask_grade = mask[y_grade : y_grade + h_grade, x_grade : x_grade + w_grade]
+        debug.save_image(mask_grade, "mask grade")
+        contours, hierarchy = cv2.findContours(
+            mask_grade, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+        img_contorns = cv2.drawContours(grade.copy(), contours, -1, GREEN, 2)
+        debug.save_image(img_contorns, "screenshot contornos 2")
+
         tiles: list[Tile] = []
-        for cnt in contours:
-            x, y, w, h = cv2.boundingRect(cnt)
-            aspect_ratio = w / float(h)
-            if 0.9 < aspect_ratio < 1.1 and 100 < w < 300:
-                tiles.append(Tile(x, y, w, h))
+        for i, cnt in enumerate(contours):
+            # Verifica se é contorno interno (filho do maior contorno)
+            if hierarchy[0][i][3] != -1:  # Pai diferente de -1 => é interno
+                x_tile, y_tile, w_tile, h_tile = cv2.boundingRect(cnt)
+                tiles.append(Tile(x_tile, y_tile, w_tile, h_tile))
 
         # Verifica se encontrou os 16 tiles
         if len(tiles) >= 16:
             tiles = sorted(tiles, key=lambda t: t.w * t.h, reverse=True)[:16]
         else:
             raise ValueError("Grade não encontrada. Tiles detectados:", len(tiles))
-
-        # Obtém os delimitadores da grade
-        x_min = min(t.x for t in tiles)
-        y_min = min(t.y for t in tiles)
-        x_max = max(t.x + t.w for t in tiles)
-        y_max = max(t.y + t.h for t in tiles)
-
-        # Atualiza coordenadas para ficarem relativas à grade
-        tiles = [Tile(t.x - x_min, t.y - y_min, t.w, t.h) for t in tiles]
 
         return grade, tiles
 
