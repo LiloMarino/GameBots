@@ -1,14 +1,14 @@
+import json
 import logging
 import threading
 from itertools import product
 
 import keyboard
-import matplotlib.pyplot as plt
 from core.sensor import GradeMethod, OCRMethod
 from logger_config import logger
 from runner import KEY, executar_simulacao, toggle_bot
 
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 # Hotkey
 threading.Thread(
@@ -18,7 +18,7 @@ logger.info(f"Pressione {KEY} para pausar ou retomar o bot.")
 
 # Parâmetros de simulação
 MAX_PARTIDAS = 1
-MAX_MOVIMENTOS = 50
+MAX_MOVIMENTOS = 20
 
 resultados = []
 
@@ -33,17 +33,4 @@ for ocr_method, grade_method in combinacoes:
     )
     resultados.append(estatisticas)
 
-
-for metrica in ["pontuacoes", "maiores_numeros", "tempos"]:
-    plt.figure()
-    for resultado in resultados:
-        label = f"{resultado['ocr']} + {resultado['grade']}"
-        valores = resultado[metrica]
-        plt.plot(valores, marker="o", label=label)
-    plt.title(f"{metrica.capitalize()} por partida")
-    plt.xlabel("Partida")
-    plt.ylabel(metrica.capitalize())
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(f"grafico_{metrica}.png")  # ou plt.show() se preferir
+json.dump(resultados, open("resultados.json", "w"))
