@@ -7,21 +7,32 @@ def nothing(x):
 
 
 # Carregar imagem colorida
-original_img = cv2.imread("debug/screenshot.png")  # use uma imagem colorida
+original_img = cv2.imread("debug/screenshot.png")
 hsv_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2HSV)
 
-# Criar janela e trackbars
+
+def on_mouse(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        pixel = hsv_img[y, x]
+        print(f"HSV em ({x},{y}): {pixel}")
+
+
+# Criar janelas
 cv2.namedWindow("Color Tuner")
+cv2.namedWindow("Original")
 
 # HSV min
-cv2.createTrackbar("H Min", "Color Tuner", 0, 179, nothing)
-cv2.createTrackbar("S Min", "Color Tuner", 0, 255, nothing)
-cv2.createTrackbar("V Min", "Color Tuner", 0, 255, nothing)
+cv2.createTrackbar("H Min", "Color Tuner", 14, 360, nothing)
+cv2.createTrackbar("S Min", "Color Tuner", 37, 100, nothing)
+cv2.createTrackbar("V Min", "Color Tuner", 187, 100, nothing)
 
 # HSV max
-cv2.createTrackbar("H Max", "Color Tuner", 179, 179, nothing)
-cv2.createTrackbar("S Max", "Color Tuner", 255, 255, nothing)
-cv2.createTrackbar("V Max", "Color Tuner", 255, 255, nothing)
+cv2.createTrackbar("H Max", "Color Tuner", 14, 360, nothing)
+cv2.createTrackbar("S Max", "Color Tuner", 37, 100, nothing)
+cv2.createTrackbar("V Max", "Color Tuner", 187, 100, nothing)
+
+# Callback para pegar HSV com clique
+cv2.setMouseCallback("Original", on_mouse)
 
 while True:
     # Ler valores dos sliders
@@ -36,6 +47,7 @@ while True:
     # Criar máscaras com base nos valores
     lower = np.array([h_min, s_min, v_min])
     upper = np.array([h_max, s_max, v_max])
+
     mask = cv2.inRange(hsv_img, lower, upper)
 
     # Aplicar máscara na imagem original
