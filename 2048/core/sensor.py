@@ -55,6 +55,7 @@ class Sensor:
             OCRMethod.EASYOCR: self._ocr_easyocr,
             OCRMethod.TESSERACT: self._ocr_tesseract,
             OCRMethod.TESSERACT_THREAD: self._ocr_tesseract_parallel,
+            OCRMethod.EASYOCR_THREAD: self._ocr_easyocr_parallel,
         }.get(ocr_method, self._ocr_easyocr)
         self.detectar_grade = {
             GradeMethod.CANNY: self._detectar_grade_canny_edge,
@@ -457,6 +458,8 @@ class Sensor:
 
         if self.ler_texto == self._ocr_tesseract_parallel:
             resultados_ocr = self._ocr_tesseract_parallel(imgs_padronizadas)
+        elif self.ler_texto == self._ocr_easyocr_parallel:
+            resultados_ocr = self._ocr_easyocr_parallel(imgs_padronizadas)
         else:
             resultados_ocr = [self.ler_texto(img) for img in imgs_padronizadas]
         return np.array(resultados_ocr, dtype=int).reshape((4, 4))
@@ -497,6 +500,18 @@ class Sensor:
         """
         with ThreadPoolExecutor(max_workers=16) as executor:
             return list(executor.map(self._ocr_tesseract, imgs))
+
+    def _ocr_easyocr_parallel(self, imgs: list[cv2.typing.MatLike]) -> list[int]:
+        """Aplica OCR com EasyOCR em lote (batched) usando GPU (mais eficiente)
+
+        Args:
+            imgs (list[cv2.typing.MatLike]): Imagens dos tiles
+
+        Returns:
+            list[int]: Valores extraídos
+        """
+        resultados = self.reader.readtext_batched(imgs, detail=0, paragraph=False)
+        return [int(r[0]) if r else 0 for r in resultados]
 
     def __del__(self):
         self.sct.close()
