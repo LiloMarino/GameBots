@@ -130,7 +130,7 @@ class Sensor:
         screenshot = self.get_screenshot()
 
         # Carrega template "score"
-        template = cv2.imread("score.png", cv2.IMREAD_COLOR)
+        template = cv2.imread("templates/score.png", cv2.IMREAD_COLOR)
         h, w = template.shape[:2]
 
         # Aplica template matching

@@ -18,14 +18,14 @@ def toggle_bot():
 
 
 def reiniciar_partida(sensor: Sensor, act: Act) -> bool:
-    coords = sensor.match_template("new_game.png")
+    coords = sensor.match_template("templates/new_game.png")
     if coords:
         act.click(*coords)
         logger.info("Clicou em New Game para reiniciar.")
         time.sleep(0.2)
         return True
     else:
-        logger.error("Botão 'New Game' não encontrado. Encerrando...")
+        logger.warning("Botão 'New Game' não encontrado.")
         return False
 
 
@@ -38,14 +38,14 @@ def registrar_estatisticas(
             maiores_numeros.append(maior)
             logger.info(f"Maior número alcançado: {maior}")
         except Exception as e:
-            logger.warning(f"Erro ao acessar board: {e}")
+            logger.error(f"Erro ao acessar board: {e}")
     try:
         time.sleep(0.2)
         score = sensor.extrair_score()
         pontuacoes.append(score)
         logger.info(f"Score extraído: {score}")
     except Exception as e:
-        logger.warning(f"Falha ao extrair score. {e}")
+        logger.error(f"Falha ao extrair score. {e}")
 
 
 def executar_simulacao(
