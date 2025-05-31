@@ -101,7 +101,12 @@ class Sensor:
         img = np.array(self.sct.grab(region if region else self.region))
         return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-    def get_grid(self):
+    def get_grid(self) -> np.ndarray[tuple[int, int], np.dtype[np.int64]]:
+        """Obtém a matriz com os valores dos tiles
+
+        Returns:
+            np.ndarray[tuple[int, int], np.dtype[np.int64]]: Matriz
+        """
         # Se for FIXED e já detectou uma vez, só reutiliza
         if self.fixed and self.fixed_tiles:
             grade = self.get_screenshot(self.grade_region)
@@ -146,6 +151,11 @@ class Sensor:
             return None
 
     def extrair_score(self) -> int:
+        """Extrai o score do jogo
+
+        Returns:
+            int: Score
+        """
         screenshot = self.get_screenshot()
 
         # Carrega template "score"
@@ -202,6 +212,14 @@ class Sensor:
         return -1
 
     def _detectar_grade_cor(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
+        """Detecta a grade e os tiles usando a segmentação por cor
+
+        Raises:
+            ValueError: Caso não seja possível detectar a grade
+
+        Returns:
+            tuple[cv2.typing.MatLike, list[Tile]]: Imagem da grade e os tiles
+        """
         screenshot = self.get_screenshot(self.grade_region)
         original = screenshot.copy()
         debug.save_image(screenshot, "screenshot")
@@ -273,6 +291,14 @@ class Sensor:
         return grade, tiles
 
     def _detectar_grade_canny_edge(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
+        """Detecta a grade e os tiles usando a segmentação por bordas
+
+        Raises:
+            ValueError: Caso não seja possível detectar a grade
+
+        Returns:
+            tuple[cv2.typing.MatLike, list[Tile]]: Imagem da grade e os tiles
+        """
         screenshot = self.get_screenshot(self.grade_region)
         original = screenshot.copy()
         debug.save_image(screenshot, "screenshot")
@@ -349,6 +375,15 @@ class Sensor:
     def _sort_tiles(
         self, screenshot: cv2.typing.MatLike, tiles: list[Tile]
     ) -> list[Tile]:
+        """Ordena os tiles por linhas para serem organizados na matriz
+
+        Args:
+            screenshot (cv2.typing.MatLike): Imagem da grade
+            tiles (list[Tile]): Tiles
+
+        Returns:
+            list[Tile]: Tiles ordenados
+        """
         # Ordena primeiro por y (linha)
         tiles = sorted(tiles, key=lambda t: t.y)
 
@@ -396,6 +431,15 @@ class Sensor:
         grid: cv2.typing.MatLike,
         tiles: list[Tile],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.int64]]:
+        """Extrai os valores dos tiles da grade
+
+        Args:
+            grid (cv2.typing.MatLike): Imagem da grade
+            tiles (list[Tile]): Tiles
+
+        Returns:
+            np.ndarray[tuple[int, int], np.dtype[np.int64]]: Matriz com os valores
+        """
         gray = cv2.cvtColor(grid, cv2.COLOR_BGR2GRAY)
         # Threshold para números brancos
         _, thresh_light = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
@@ -418,15 +462,39 @@ class Sensor:
         return np.array(resultados_ocr, dtype=int).reshape((4, 4))
 
     def _ocr_easyocr(self, img: cv2.typing.MatLike) -> int:
+        """Aplica OCR com EasyOCR
+
+        Args:
+            img (cv2.typing.MatLike): Imagem
+
+        Returns:
+            int: Valor extraído
+        """
         resultado = self.reader.readtext(img, detail=0, paragraph=False)
         return int(resultado[0]) if resultado else 0
 
     def _ocr_tesseract(self, img: cv2.typing.MatLike) -> int:
+        """Aplica OCR com Tesseract
+
+        Args:
+            img (cv2.typing.MatLike): Imagem
+
+        Returns:
+            int: Valor extraído
+        """
         config = "--psm 8 --oem 3 -c tessedit_char_whitelist=0123456789"
         texto = pytesseract.image_to_string(img, config=config).strip()
         return int(texto) if texto else 0
 
     def _ocr_tesseract_parallel(self, imgs: list[cv2.typing.MatLike]) -> list[int]:
+        """Aplica OCR com Tesseract em paralelo via ThreadPool
+
+        Args:
+            imgs (list[cv2.typing.MatLike]): Imagens dos tiles
+
+        Returns:
+            list[int]: Valores extraídos
+        """
         with ThreadPoolExecutor(max_workers=16) as executor:
             return list(executor.map(self._ocr_tesseract, imgs))
 
