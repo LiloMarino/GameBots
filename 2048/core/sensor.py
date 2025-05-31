@@ -24,12 +24,15 @@ class Tile(NamedTuple):
 class OCRMethod(Enum):
     TESSERACT = auto()
     EASYOCR = auto()
-    TESSERACT_BATCH = auto()
+    TESSERACT_THREAD = auto()
+    EASYOCR_THREAD = auto()
 
 
 class GradeMethod(Enum):
     CANNY = auto()
+    CANNY_FIXED = auto()
     COR = auto()
+    COR_FIXED = auto()
 
 
 # Classe Principal
@@ -47,7 +50,7 @@ class Sensor:
         self.ler_texto = {
             OCRMethod.EASYOCR: self._ocr_easyocr,
             OCRMethod.TESSERACT: self._ocr_tesseract,
-            OCRMethod.TESSERACT_BATCH: self._ocr_tesseract_parallel,
+            OCRMethod.TESSERACT_THREAD: self._ocr_tesseract_parallel,
         }.get(ocr_method, self._ocr_easyocr)
         self.detectar_grade = {
             GradeMethod.CANNY: self._detectar_grade_canny_edge,
@@ -183,7 +186,63 @@ class Sensor:
         return -1
 
     def _detectar_grade_cor(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
-        pass
+        screenshot = self.get_screenshot(self.grade_region)
+        original = screenshot.copy()
+        debug.save_image(screenshot, "screenshot")
+
+        # Converte para HSV para segmentação por cor
+        hsv = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)
+
+        # Define o intervalo da cor predominante dos tiles (ajuste conforme necessário)
+        lower_color = np.array([13, 36, 186])
+        upper_color = np.array([15, 38, 188])
+
+        mask = cv2.inRange(hsv, lower_color, upper_color)
+        debug.save_image(mask, "mask_color")
+
+        # Detecta contornos
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        img_contorns = cv2.drawContours(screenshot, contours, -1, GREEN, 1)
+        debug.save_image(img_contorns, "screenshot contornos")
+
+        tiles: list[Tile] = []
+        for cnt in contours:
+            x, y, w, h = cv2.boundingRect(cnt)
+            aspect_ratio = w / float(h)
+            if 0.9 < aspect_ratio < 1.1 and 100 < w < 300:
+                tiles.append(Tile(x, y, w, h))
+
+        # Verifica se encontrou os 16 tiles
+        if len(tiles) >= 16:
+            tiles = sorted(tiles, key=lambda t: t.w * t.h, reverse=True)[:16]
+        else:
+            raise ValueError("Grade não encontrada. Tiles detectados:", len(tiles))
+
+        # Obtém os delimitadores da grade
+        x_min = min(t.x for t in tiles)
+        y_min = min(t.y for t in tiles)
+        x_max = max(t.x + t.w for t in tiles)
+        y_max = max(t.y + t.h for t in tiles)
+
+        # Salva a região da grade para screenshots futuras
+        if not self.grade_region:
+            MARGEM = 20
+            self.grade_region = {
+                "top": self.region["top"] + y_min - MARGEM,
+                "left": self.region["left"] + x_min - MARGEM,
+                "width": x_max - x_min + 2 * MARGEM,
+                "height": y_max - y_min + 2 * MARGEM,
+            }
+        cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
+
+        # Atualiza coordenadas para ficarem relativas à grade
+        tiles = [Tile(t.x - x_min, t.y - y_min, t.w, t.h) for t in tiles]
+
+        grade = original[y_min:y_max, x_min:x_max]
+        debug.save_image(screenshot, "screenshot grade")
+        debug.save_image(grade, "grade")
+
+        return grade, tiles
 
     def _detectar_grade_canny_edge(self) -> tuple[cv2.typing.MatLike, list[Tile]]:
         screenshot = self.get_screenshot(self.grade_region)
