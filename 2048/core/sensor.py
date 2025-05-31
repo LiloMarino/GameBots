@@ -45,8 +45,12 @@ class Sensor:
     ):
         self.region = self.get_window(window_name)
         self.grade_region = None
+        self.fixed = "FIXED" in grade_method.name
+        self.fixed_tiles = None
         self.sct = mss.mss()
         self.reader = easyocr.Reader(["pt"])
+
+        # Métodos e técnicas
         self.ler_texto = {
             OCRMethod.EASYOCR: self._ocr_easyocr,
             OCRMethod.TESSERACT: self._ocr_tesseract,
@@ -55,6 +59,8 @@ class Sensor:
         self.detectar_grade = {
             GradeMethod.CANNY: self._detectar_grade_canny_edge,
             GradeMethod.COR: self._detectar_grade_cor,
+            GradeMethod.CANNY_FIXED: self._detectar_grade_canny_edge,
+            GradeMethod.COR_FIXED: self._detectar_grade_cor,
         }.get(grade_method, self._detectar_grade_canny_edge)
 
     def get_window(self, window_name: str) -> dict[str, int]:
@@ -96,8 +102,18 @@ class Sensor:
         return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
     def get_grid(self):
+        # Se for FIXED e já detectou uma vez, só reutiliza
+        if self.fixed and self.fixed_tiles:
+            grade = self.get_screenshot(self.grade_region)
+            return self._extrair_tiles(grade, self.fixed_tiles)
+
+        # Caso contrário, detecta normalmente
         grade, tiles = self.detectar_grade()
         tiles = self._sort_tiles(grade.copy(), tiles)
+
+        if self.fixed:
+            self.fixed_tiles = tiles
+
         return self._extrair_tiles(grade, tiles)
 
     def match_template(
