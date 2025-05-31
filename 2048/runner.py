@@ -104,7 +104,7 @@ def executar_simulacao(
                 act.executar_jogada(move)
                 movimentos += 1
                 logger.info(f"Movimento {movimentos}/{max_movimentos}")
-                time.sleep(0.2)
+                time.sleep(0.15)
             else:
                 logger.info(f"Fim de jogo detectado na partida {partida}")
                 registrar_estatisticas(sensor, board, maiores_numeros, pontuacoes)
@@ -132,3 +132,12 @@ def executar_simulacao(
     logger.info(f"Maiores números por partida: {maiores_numeros}")
     logger.info(f"Pontuações detectadas: {pontuacoes}")
     logger.info(f"Tempos por partida (s): {[f'{t:.2f}' for t in tempos_partida]}")
+
+    return {
+        "ocr": ocr_method.name,
+        "grade": grade_method.name,
+        "falhas_grid": falhas_grid,
+        "maiores_numeros": maiores_numeros,
+        "pontuacoes": pontuacoes,
+        "tempos": tempos_partida,
+    }
