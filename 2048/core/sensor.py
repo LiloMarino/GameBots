@@ -202,8 +202,29 @@ class Sensor:
 
         # Detecta contornos
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        img_contorns = cv2.drawContours(screenshot, contours, -1, GREEN, 1)
-        debug.save_image(img_contorns, "screenshot contornos")
+        img_contorns = cv2.drawContours(screenshot.copy(), contours, -1, GREEN, 3)
+        debug.save_image(img_contorns, "screenshot contornos 1")
+
+        # Obtém o contorno de maior área (provavelmente a grid central)
+        biggest = max(contours, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(biggest)
+
+        # Salva a região da grade (em coordenadas absolutas da tela)
+        if not self.grade_region:
+            MARGEM = 20
+            self.grade_region = {
+                "top": self.region["top"] + y - MARGEM,
+                "left": self.region["left"] + x - MARGEM,
+                "width": w + 2 * MARGEM,
+                "height": h + 2 * MARGEM,
+            }
+
+        cv2.rectangle(screenshot, (x, y), (x + w, y + h), GREEN, 3)
+
+        # Recorta a grade
+        grade = original[y : y + h, x : x + w]
+        debug.save_image(screenshot, "screenshot grade")
+        debug.save_image(grade, "grade")
 
         tiles: list[Tile] = []
         for cnt in contours:
@@ -224,23 +245,8 @@ class Sensor:
         x_max = max(t.x + t.w for t in tiles)
         y_max = max(t.y + t.h for t in tiles)
 
-        # Salva a região da grade para screenshots futuras
-        if not self.grade_region:
-            MARGEM = 20
-            self.grade_region = {
-                "top": self.region["top"] + y_min - MARGEM,
-                "left": self.region["left"] + x_min - MARGEM,
-                "width": x_max - x_min + 2 * MARGEM,
-                "height": y_max - y_min + 2 * MARGEM,
-            }
-        cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
-
         # Atualiza coordenadas para ficarem relativas à grade
         tiles = [Tile(t.x - x_min, t.y - y_min, t.w, t.h) for t in tiles]
-
-        grade = original[y_min:y_max, x_min:x_max]
-        debug.save_image(screenshot, "screenshot grade")
-        debug.save_image(grade, "grade")
 
         return grade, tiles
 
