@@ -8,7 +8,7 @@ from core.sensor import GradeMethod, OCRMethod
 from logger_config import logger
 from runner import KEY, executar_simulacao, toggle_bot
 
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 # Hotkey
 threading.Thread(
@@ -16,14 +16,13 @@ threading.Thread(
 ).start()
 logger.info(f"Pressione {KEY} para pausar ou retomar o bot.")
 
-# Parâmetros de simulação
-MAX_PARTIDAS = 1
-MAX_MOVIMENTOS = 20
+# ---------- FASE 1: Testes de desempenho (OCR + GRID) ----------
+MAX_PARTIDAS = 20
+MAX_MOVIMENTOS = 50
 
-resultados = []
-
-# Testar todas as combinações de métodos
+resultados_fase1 = []
 combinacoes = list(product(OCRMethod, GradeMethod))
+
 for ocr_method, grade_method in combinacoes:
     estatisticas = executar_simulacao(
         ocr_method=ocr_method,
@@ -31,6 +30,21 @@ for ocr_method, grade_method in combinacoes:
         max_partidas=MAX_PARTIDAS,
         max_movimentos=MAX_MOVIMENTOS,
     )
-    resultados.append(estatisticas)
+    resultados_fase1.append(estatisticas)
 
-json.dump(resultados, open("resultados.json", "w"))
+with open("resultados.json", "w") as f:
+    json.dump(resultados_fase1, f, indent=2)
+
+# ---------- FASE 2: Teste heurística (100 partidas sem limite) ----------
+MAX_PARTIDAS = 100
+MAX_MOVIMENTOS = 9999
+
+resultado_fase2 = executar_simulacao(
+    ocr_method=OCRMethod.EASYOCR_THREAD,
+    grade_method=GradeMethod.COR_FIXED,
+    max_partidas=MAX_PARTIDAS,
+    max_movimentos=MAX_MOVIMENTOS,
+)
+
+with open("resultados_think.json", "w") as f:
+    json.dump([resultado_fase2], f, indent=2)
