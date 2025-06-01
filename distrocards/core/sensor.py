@@ -35,8 +35,8 @@ class Sensor:
 
     def set_card_detection(self, card_detection: CardDetection):
         self.card_detection = {
-            CardDetection.COR: self._detectar_card_cor,
-        }.get(card_detection, self._detectar_card_cor)
+            CardDetection.COR: self._detectar_cards_cor,
+        }.get(card_detection, self._detectar_cards_cor)
 
     def get_window(self, window_name: str) -> dict[str, int]:
         """Retorna a região da janela
@@ -116,7 +116,10 @@ class Sensor:
         else:
             return None
 
-    def _detectar_card_cor(self) -> list[Card]:
+    def get_cards(self) -> list[Card]:
+        return self.card_detection()
+
+    def _detectar_cards_cor(self) -> list[Card]:
         screenshot = self.get_screenshot()
         debug.save_image(screenshot, "screenshot")
 

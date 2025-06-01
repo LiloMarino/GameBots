@@ -63,7 +63,9 @@ class Bot:
     def run(self):
         while not self.bot_ativo:
             time.sleep(1)
-        self.sensor._detectar_card_cor()
+        cards = self.sensor.get_cards()
+        logger.info(f"Cartas encontradas: {len(cards)}")
+        self.think.set_cards(cards)
 
     def is_active(self):
         return self.bot_ativo
