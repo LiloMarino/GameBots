@@ -48,13 +48,22 @@ class Bot:
         time.sleep(0.2)
 
         # Seleciona a dificuldade
-        for difficulty in Difficulty:
-            difficulty_template = f"{difficulty.name.lower()}"
-            coords = self.sensor.match_template(difficulty_template)
-            if coords is None:
-                logger.error("Não foi possível selecionar a dificuldade")
-                raise Exception("Não foi possivel selecionar a dificuldade")
-            pyautogui.moveTo(*coords)
+        difficulty_template = f"{difficulty.name.lower()}"
+        coords = self.sensor.match_template(difficulty_template)
+        if coords is None:
+            logger.error("Não foi possível selecionar a dificuldade")
+            raise Exception("Não foi possivel selecionar a dificuldade")
+        self.act.click(*coords)
+
+        # Espera as cartas aparecerem
+        while self.sensor.match_template("card_verso") is None:
+            logger.debug("Esperando cartas aparecerem...")
+            time.sleep(0.5)
+
+    def run(self):
+        while not self.bot_ativo:
+            time.sleep(1)
+        self.sensor._detectar_card_cor()
 
     def is_active(self):
         return self.bot_ativo
