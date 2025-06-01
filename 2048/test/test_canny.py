@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Carrega imagem em escala de cinza
-original_img = cv2.imread("debug/screenshot gray.png", cv2.IMREAD_GRAYSCALE)
+original_img = cv2.imread("../debug/screenshot gray.png", cv2.IMREAD_GRAYSCALE)
 
 
 def nothing(x):
