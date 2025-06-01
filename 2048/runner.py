@@ -18,7 +18,7 @@ def toggle_bot():
 
 
 def reiniciar_partida(sensor: Sensor, act: Act) -> bool:
-    coords = sensor.match_template("templates/new_game.png")
+    coords = sensor.match_template("new_game")
     if coords:
         act.click(*coords)
         logger.info("Clicou em New Game para reiniciar.")

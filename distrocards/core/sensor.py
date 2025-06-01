@@ -7,7 +7,7 @@ import pygetwindow as gw
 
 
 class Sensor:
-    TEMPLATE_DIR = Path("templates")
+    TEMPLATES_DIR = Path("templates")
 
     def __init__(self, window_name: str) -> None:
         self.region = self.get_window(window_name)
@@ -65,7 +65,7 @@ class Sensor:
         """
         screenshot = self.get_screenshot()
         template = cv2.imread(
-            str(self.TEMPLATE_DIR / f"{template_name}.png"), cv2.IMREAD_COLOR
+            str(self.TEMPLATES_DIR / f"{template_name}.png"), cv2.IMREAD_COLOR
         )
 
         if template is None:

@@ -30,7 +30,6 @@ class Bot:
             target=lambda: keyboard.add_hotkey(self.hotkey, self.toggle), daemon=True
         ).start()
         logger.info(f"Pressione {self.hotkey} para pausar ou retomar o bot.")
-        debug.save_image(self.sensor.get_screenshot(), "screenshot")
 
     def toggle(self):
         self.bot_ativo = not self.bot_ativo
