@@ -63,9 +63,16 @@ class Bot:
     def run(self):
         while not self.bot_ativo:
             time.sleep(1)
+
+        # Obtém as cartas e inicializa o Think
         cards = self.sensor.get_cards()
         logger.info(f"Cartas encontradas: {len(cards)}")
         self.think.set_cards(cards)
+
+        # Enquanto houver pares para serem encontrados
+        while self.think.left_cards() > 0:
+            while not self.bot_ativo:
+                time.sleep(1)
 
     def is_active(self):
         return self.bot_ativo
