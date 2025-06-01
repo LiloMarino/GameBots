@@ -4,6 +4,7 @@
     "./distrocards"
   ],
   "conventionalCommits.scopes": [
-    "distrocards"
+    "distrocards",
+    "2048"
   ]
 }
