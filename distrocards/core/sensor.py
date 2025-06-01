@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import cv2
 import mss
 import numpy as np
@@ -5,6 +7,8 @@ import pygetwindow as gw
 
 
 class Sensor:
+    TEMPLATE_DIR = Path("templates")
+
     def __init__(self, window_name: str) -> None:
         self.region = self.get_window(window_name)
         self.sct = mss.mss()
@@ -48,22 +52,24 @@ class Sensor:
         return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
     def match_template(
-        self, template_path: str, threshold: float = 0.8
+        self, template_name: str, threshold: float = 0.8
     ) -> tuple[int, int] | None:
         """Procura por um template na janela do jogo e clica nele se encontrar.
 
         Args:
-            template_path (str): Caminho para a imagem do template.
+            template_name (str): Nome da imagem do template.
             threshold (float): Limite mínimo de similaridade. Defaults to 0.8.
 
         Returns:
             tuple[int, int] | None: Coordenadas clicadas ou None se não encontrado.
         """
         screenshot = self.get_screenshot()
-        template = cv2.imread(template_path, cv2.IMREAD_COLOR)
+        template = cv2.imread(
+            str(self.TEMPLATE_DIR / f"{template_name}.png"), cv2.IMREAD_COLOR
+        )
 
         if template is None:
-            raise FileNotFoundError(f"Template não encontrado: {template_path}")
+            raise FileNotFoundError(f"Template não encontrado: {template_name}")
 
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
