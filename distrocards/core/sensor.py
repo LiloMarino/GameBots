@@ -1,5 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
+from typing import NamedTuple
 
 import cv2
 import mss
@@ -14,6 +15,13 @@ class CardDetection(Enum):
     COR = auto()
 
 
+class Card(NamedTuple):
+    x: int
+    y: int
+    w: int
+    h: int
+
+
 # Classe Principal
 class Sensor:
     TEMPLATES_DIR = Path("templates")
@@ -22,7 +30,6 @@ class Sensor:
         self, window_name: str, card_detection: CardDetection = CardDetection.COR
     ) -> None:
         self.region = self.get_window(window_name)
-        self.cards_region = None
         self.sct = mss.mss()
         self.set_card_detection(card_detection)
 
@@ -109,39 +116,44 @@ class Sensor:
         else:
             return None
 
-    def _detectar_card_cor(self):
-        screenshot = self.get_screenshot(self.cards_region)
+    def _detectar_card_cor(self) -> list[Card]:
+        screenshot = self.get_screenshot()
         debug.save_image(screenshot, "screenshot")
 
         # Converte para HSV para segmentação por cor
         hsv = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)
 
         # Define o intervalo da cor predominante do fundo (ajuste conforme necessário)
-        lower_color = np.array([13, 36, 186])
-        upper_color = np.array([15, 38, 188])
+        lower_color = np.array([0, 0, 30])
+        upper_color = np.array([0, 0, 33])
 
+        # Obtém a máscara invertida para pegar as cartas
         mask = cv2.inRange(hsv, lower_color, upper_color)
-        debug.save_image(mask, "mask_color")
+        debug.save_image(mask, "mask_cards")
 
         # Detecta contornos
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         img_contorns = cv2.drawContours(screenshot.copy(), contours, -1, GREEN, 2)
         debug.save_image(img_contorns, "screenshot contornos")
 
-        # Busca a área que contempla todas as cartas para otimizar os próximos screenshots
-        if not self.cards_region:
-            all_points = np.concatenate(contours)
-            x, y, w, h = cv2.boundingRect(all_points)
-            self.cards_region = {
-                "top": self.region["top"] + y,
-                "left": self.region["left"] + x,
-                "width": w,
-                "height": h,
-            }
-            cv2.rectangle(img_contorns, (x, y), (x + w, y + h), RED, 2)
-            debug.save_image(img_contorns, "cards area")
-            cards_area = screenshot[y : y + h, x : x + w]
-            debug.save_image(cards_area, "cards area screenshot")
+        # Filtra os contornos para pegar apenas as cartas
+        cartas_detectadas: list[Card] = []
+        for cnt in contours:
+            x, y, w, h = cv2.boundingRect(cnt)
+            area_cnt = cv2.contourArea(cnt)
+            area_box = w * h
+
+            # Critérios de filtragem
+            aspect_ratio = w / h
+            solidity = area_cnt / area_box
+
+            if 0.6 < aspect_ratio < 1.8 and solidity > 0.85:
+                cartas_detectadas.append(Card(x, y, w, h))
+                cv2.rectangle(screenshot, (x, y), (x + w, y + h), GREEN, 2)
+
+        debug.save_image(screenshot, "contornos filtrados")
+
+        return cartas_detectadas
 
     def __del__(self):
         self.sct.close()
