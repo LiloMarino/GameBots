@@ -4,6 +4,8 @@ import cv2
 import mss
 import numpy as np
 import pygetwindow as gw
+from core import debug
+from core.constants import RED
 
 
 class Sensor:
@@ -78,6 +80,15 @@ class Sensor:
             template_h, template_w = template.shape[:2]
             click_x = self.region["left"] + max_loc[0] + template_w // 2
             click_y = self.region["top"] + max_loc[1] + template_h // 2
+
+            # cv2.rectangle(
+            #     screenshot,
+            #     max_loc,
+            #     (max_loc[0] + template_w, max_loc[1] + template_h),
+            #     RED,
+            #     2,
+            # )
+            # debug.save_image(screenshot, f"match_{template_name}")
             return (click_x, click_y)
         else:
             return None

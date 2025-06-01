@@ -1,4 +1,5 @@
 import threading
+import time
 from enum import Enum, auto
 
 import keyboard
@@ -44,6 +45,7 @@ class Bot:
             logger.error("Não foi possível iniciar o jogo")
             raise Exception("Não foi possivel iniciar o jogo")
         self.act.click(*coords)
+        time.sleep(0.2)
 
         # Seleciona a dificuldade
         for difficulty in Difficulty:
