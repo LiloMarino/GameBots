@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from constants import BASE_PATH
 
 
 def nothing(x):
@@ -7,7 +8,7 @@ def nothing(x):
 
 
 # Carregar imagem colorida
-original_img = cv2.imread("../debug/screenshot.png")
+original_img = cv2.imread(str(BASE_PATH / "screenshot.png"))
 hsv_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2HSV)
 
 

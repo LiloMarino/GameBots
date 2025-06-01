@@ -9,10 +9,12 @@ from core import debug
 from core.constants import GREEN, RED
 
 
+# Tipos
 class CardDetection(Enum):
     COR = auto()
 
 
+# Classe Principal
 class Sensor:
     TEMPLATES_DIR = Path("templates")
 
