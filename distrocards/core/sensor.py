@@ -47,5 +47,34 @@ class Sensor:
         img = np.array(self.sct.grab(region if region else self.region))
         return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
+    def match_template(
+        self, template_path: str, threshold: float = 0.8
+    ) -> tuple[int, int] | None:
+        """Procura por um template na janela do jogo e clica nele se encontrar.
+
+        Args:
+            template_path (str): Caminho para a imagem do template.
+            threshold (float): Limite mínimo de similaridade. Defaults to 0.8.
+
+        Returns:
+            tuple[int, int] | None: Coordenadas clicadas ou None se não encontrado.
+        """
+        screenshot = self.get_screenshot()
+        template = cv2.imread(template_path, cv2.IMREAD_COLOR)
+
+        if template is None:
+            raise FileNotFoundError(f"Template não encontrado: {template_path}")
+
+        result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+        if max_val >= threshold:
+            template_h, template_w = template.shape[:2]
+            click_x = self.region["left"] + max_loc[0] + template_w // 2
+            click_y = self.region["top"] + max_loc[1] + template_h // 2
+            return (click_x, click_y)
+        else:
+            return None
+
     def __del__(self):
         self.sct.close()

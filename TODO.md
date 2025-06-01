@@ -21,3 +21,7 @@ Apresentou diversos problemas na presença dos números 128, 256 e 512. Razão: 
 Explicar que os gráficos que vão até o fim são muito sensíveis a sorte, tanto da configuração inicial e da posição em que 
 os números podem ser gerados ao longo do jogo, permitindo que partidas que tiveram sorte cheguem mais longe
 obtendo score e números maiores, enquanto e que limitando a X movimentos reduz os efeitos da sorte.
+
+- Melhorar código para encaixar runner.py em uma classe Bot em bot.py
+
+# DistroCards
