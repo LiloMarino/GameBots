@@ -49,6 +49,7 @@ class Sensor:
         self.fixed_tiles = None
         self.sct = mss.mss()
         self.reader = easyocr.Reader(["pt"])
+        self.margem = 0 if self.fixed else 20
 
         # Métodos e técnicas
         self.ler_texto = {
@@ -246,12 +247,11 @@ class Sensor:
 
         # Salva a região da grade (em coordenadas absolutas da tela)
         if not self.grade_region:
-            MARGEM = 20
             self.grade_region = {
-                "top": self.region["top"] + y_grade - MARGEM,
-                "left": self.region["left"] + x_grade - MARGEM,
-                "width": w_grade + 2 * MARGEM,
-                "height": h_grade + 2 * MARGEM,
+                "top": self.region["top"] + y_grade,
+                "left": self.region["left"] + x_grade,
+                "width": w_grade,
+                "height": h_grade,
             }
 
         cv2.rectangle(
@@ -355,12 +355,11 @@ class Sensor:
 
         # Salva a região da grade para screenshots futuras
         if not self.grade_region:
-            MARGEM = 20
             self.grade_region = {
-                "top": self.region["top"] + y_min - MARGEM,
-                "left": self.region["left"] + x_min - MARGEM,
-                "width": x_max - x_min + 2 * MARGEM,
-                "height": y_max - y_min + 2 * MARGEM,
+                "top": self.region["top"] + y_min - self.margem,
+                "left": self.region["left"] + x_min - self.margem,
+                "width": x_max - x_min + 2 * self.margem,
+                "height": y_max - y_min + 2 * self.margem,
             }
         cv2.rectangle(screenshot, (x_min, y_min), (x_max, y_max), GREEN, 3)
 
