@@ -54,14 +54,14 @@ class Sensor:
     def match_template(
         self, template_name: str, threshold: float = 0.8
     ) -> tuple[int, int] | None:
-        """Procura por um template na janela do jogo e clica nele se encontrar.
+        """Procura por um template na janela do jogo e retorna as coordenadas
 
         Args:
             template_name (str): Nome da imagem do template.
             threshold (float): Limite mínimo de similaridade. Defaults to 0.8.
 
         Returns:
-            tuple[int, int] | None: Coordenadas clicadas ou None se não encontrado.
+            tuple[int, int] | None: Coordenadas ou None se não encontrado.
         """
         screenshot = self.get_screenshot()
         template = cv2.imread(

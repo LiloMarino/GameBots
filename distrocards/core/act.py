@@ -1,3 +1,6 @@
+import pyautogui
+
+
 class Act:
-    def __init__(self) -> None:
-        pass
+    def click(self, x: int, y: int):
+        pyautogui.click(x, y)

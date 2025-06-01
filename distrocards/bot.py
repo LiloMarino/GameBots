@@ -2,6 +2,7 @@ import threading
 from enum import Enum, auto
 
 import keyboard
+import pyautogui
 from core import debug
 from core.act import Act
 from core.sensor import Sensor
@@ -11,7 +12,7 @@ from logger_config import logger
 
 class Difficulty(Enum):
     EASY = auto()
-    NORMAL = auto()
+    MEDIUM = auto()
     HARD = auto()
 
 
@@ -37,7 +38,21 @@ class Bot:
         logger.info(f"{estado}")
 
     def start(self, difficulty: Difficulty) -> None:
-        pass
+        # Clica no play
+        coords = self.sensor.match_template("play")
+        if coords is None:
+            logger.error("Não foi possível iniciar o jogo")
+            raise Exception("Não foi possivel iniciar o jogo")
+        self.act.click(*coords)
+
+        # Seleciona a dificuldade
+        for difficulty in Difficulty:
+            difficulty_template = f"{difficulty.name.lower()}"
+            coords = self.sensor.match_template(difficulty_template)
+            if coords is None:
+                logger.error("Não foi possível selecionar a dificuldade")
+                raise Exception("Não foi possivel selecionar a dificuldade")
+            pyautogui.moveTo(*coords)
 
     def is_active(self):
         return self.bot_ativo
