@@ -1,6 +1,7 @@
 import threading
 
 import keyboard
+from core import debug
 from core.act import Act
 from core.sensor import Sensor
 from core.think import Think
@@ -16,3 +17,5 @@ logger.info(f"Pressione {KEY} para pausar ou retomar o bot.")
 sensor = Sensor("DistroCards")
 think = Think()
 act = Act()
+
+debug.save_image(sensor.get_screenshot(), "screenshot")
