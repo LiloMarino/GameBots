@@ -16,6 +16,7 @@ class Act:
 
     def click(self, x: int, y: int):
         # Clique relativo a janela
+        pyautogui.moveTo(self.x + x, self.y + y, duration=0.3)
         pyautogui.click(self.x + x, self.y + y)
 
     def click_center(self, card: Card):

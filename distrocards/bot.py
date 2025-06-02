@@ -87,15 +87,16 @@ class Bot:
             if card2:
                 # Faz o match
                 self.act.match_pair(card1, card2)
-                time.sleep(0.3)
+                logger.info(f"Par encontrado: {card1} <-> {card2}")
                 del self.think.cards[card1]
                 del self.think.cards[card2]
-                logger.info(f"Par encontrado: {card1} <-> {card2}")
             else:
                 # Não tem par
                 logger.info(f"Par não encontrado: {card1}")
                 card2 = self.think.random_undiscovered()
                 self.act.click_center(card2)
+
+                # TODO
                 time.sleep(0.5)
                 self.think.cards[card2] = self.sensor.capturar_carta(card2)
 
