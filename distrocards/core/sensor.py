@@ -101,8 +101,8 @@ class Sensor:
 
         if max_val >= threshold:
             template_h, template_w = template.shape[:2]
-            click_x = self.region["left"] + max_loc[0] + template_w // 2
-            click_y = self.region["top"] + max_loc[1] + template_h // 2
+            cx = max_loc[0] + template_w // 2
+            cy = max_loc[1] + template_h // 2
 
             # cv2.rectangle(
             #     screenshot,
@@ -112,7 +112,7 @@ class Sensor:
             #     2,
             # )
             # debug.save_image(screenshot, f"match_{template_name}")
-            return (click_x, click_y)
+            return (cx, cy)
         else:
             return None
 
