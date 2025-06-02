@@ -12,3 +12,7 @@ class Act:
 
     def click_center(self, card: Card):
         pyautogui.click(card.x + card.w // 2, card.y + card.h // 2)
+
+    def match_pair(self, card1: Card, card2: Card):
+        self.click_center(card1)
+        self.click_center(card2)

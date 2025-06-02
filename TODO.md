@@ -25,3 +25,5 @@ obtendo score e números maiores, enquanto e que limitando a X movimentos reduz 
 - Melhorar código para encaixar runner.py em uma classe Bot em bot.py
 
 # DistroCards
+
+- Ajustar uma forma de criar um "wait verso"

@@ -74,5 +74,55 @@ class Bot:
             while not self.bot_ativo:
                 time.sleep(1)
 
+            card1 = self.think.random_undiscovered()
+            self.act.click_center(card1)
+
+            # Aguarda um tempo para a carta virar (ajuste conforme necessário)
+            # TODO
+            time.sleep(0.5)
+
+            # Captura a imagem da carta
+            screenshot = self.sensor.get_screenshot()
+            cropped = screenshot[
+                card1.y : card1.y + card1.h, card1.x : card1.x + card1.w
+            ]
+            self.think.cards[card1] = cropped
+
+            # Tem par?
+            card2 = self.think.get_pair(card1)
+            if card2:
+                # Faz o match
+                self.act.match_pair(card1, card2)
+                time.sleep(0.3)
+                del self.think.cards[card1]
+                del self.think.cards[card2]
+                logger.info(f"Par encontrado: {card1} <-> {card2}")
+            else:
+                # Não tem par
+                logger.info(f"Par não encontrado: {card1}")
+                card2 = self.think.random_undiscovered()
+                self.act.click_center(card2)
+                time.sleep(0.5)
+                screenshot = self.sensor.get_screenshot()
+                cropped = screenshot[
+                    card2.y : card2.y + card2.h, card2.x : card2.x + card2.w
+                ]
+                self.think.cards[card2] = cropped
+
+                # Fez par?
+                if self.think.is_pair(card1, card2):
+                    logger.info(f"Par encontrado: {card1} <-> {card2}")
+                    del self.think.cards[card1]
+                    del self.think.cards[card2]
+
+            # Existe algum par que foi descoberto?
+            pair = self.think.get_discovered_pair()
+            if pair:
+                card1, card2 = pair
+                self.act.match_pair(card1, card2)
+                logger.info(f"Par encontrado: {card1} <-> {card2}")
+                del self.think.cards[card1]
+                del self.think.cards[card2]
+
     def is_active(self):
         return self.bot_ativo
