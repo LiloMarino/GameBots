@@ -82,11 +82,7 @@ class Bot:
             time.sleep(0.5)
 
             # Captura a imagem da carta
-            screenshot = self.sensor.get_screenshot()
-            cropped = screenshot[
-                card1.y : card1.y + card1.h, card1.x : card1.x + card1.w
-            ]
-            self.think.cards[card1] = cropped
+            self.think.cards[card1] = self.sensor.capturar_carta(card1)
 
             # Tem par?
             card2 = self.think.get_pair(card1)
@@ -103,11 +99,7 @@ class Bot:
                 card2 = self.think.random_undiscovered()
                 self.act.click_center(card2)
                 time.sleep(0.5)
-                screenshot = self.sensor.get_screenshot()
-                cropped = screenshot[
-                    card2.y : card2.y + card2.h, card2.x : card2.x + card2.w
-                ]
-                self.think.cards[card2] = cropped
+                self.think.cards[card2] = self.sensor.capturar_carta(card2)
 
                 # Fez par?
                 if self.think.is_pair(card1, card2):

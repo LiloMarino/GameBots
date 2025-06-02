@@ -119,6 +119,12 @@ class Sensor:
     def get_cards(self) -> list[Card]:
         return self.card_detection()
 
+    def capturar_carta(self, card: Card):
+        screenshot = self.get_screenshot()
+        cropped = screenshot[card.y : card.y + card.h, card.x : card.x + card.w]
+        debug.save_image(cropped, f"carta {card}")
+        return cropped
+
     def _detectar_cards_cor(self) -> list[Card]:
         screenshot = self.get_screenshot()
         debug.save_image(screenshot, "screenshot")
