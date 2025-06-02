@@ -1,7 +1,9 @@
 import random
 from typing import TYPE_CHECKING, Iterator
 
+import cv2
 from logger_config import logger
+from skimage.metrics import structural_similarity as ssim
 
 if TYPE_CHECKING:
     import numpy as np
@@ -39,8 +41,25 @@ class Think:
                     return card1, card2
         return None
 
-    def is_pair(self, card1: Card, card2: Card) -> bool:
-        pass
+    def is_pair(self, card1: Card, card2: Card, threshold: float = 0.9) -> bool:
+        img1 = self.cards[card1]
+        img2 = self.cards[card2]
+
+        if img1 is None or img2 is None:
+            return False
+
+        # Converte para escala de cinza
+        gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+
+        # Redimensiona para mesma forma se necessário
+        if gray1.shape != gray2.shape:
+            gray2 = cv2.resize(gray2, (gray1.shape[1], gray1.shape[0]))
+
+        score, *_ = ssim(gray1, gray2, full=True)
+
+        # Limiar de similaridade
+        return score > threshold
 
     @property
     def discovered_cards(self) -> Iterator[Card]:
