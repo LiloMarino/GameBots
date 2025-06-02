@@ -33,7 +33,7 @@ class Think:
 
     def get_pair(self, actual_card: Card) -> Card | None:
         for card in self.discovered_cards:
-            if self.is_pair(actual_card, card):
+            if card != actual_card and self.is_pair(actual_card, card):
                 return card
         return None
 
