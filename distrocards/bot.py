@@ -25,7 +25,7 @@ class Bot:
         # Componentes principais
         self.sensor = Sensor("DistroCards")
         self.think = Think()
-        self.act = Act()
+        self.act = Act(self.sensor.region)
 
         # Inicia atalho de teclado em uma thread
         threading.Thread(
@@ -65,9 +65,7 @@ class Bot:
             time.sleep(1)
 
         # Obtém as cartas e inicializa o Think
-        cards = self.sensor.get_cards()
-        logger.info(f"Cartas encontradas: {len(cards)}")
-        self.think.set_cards(cards)
+        self.think.set_cards(self.sensor.get_cards())
 
         # Enquanto houver pares para serem encontrados
         while self.think.left_cards() > 0:

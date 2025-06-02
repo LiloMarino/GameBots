@@ -9,11 +9,17 @@ if TYPE_CHECKING:
 
 
 class Act:
+    def __init__(self, region: dict[str, int]) -> None:
+        # Obtém as coordenadas da janela para fazer os clicks
+        self.x = region["left"]
+        self.y = region["top"]
+
     def click(self, x: int, y: int):
-        pyautogui.click(x, y)
+        # Clique relativo a janela
+        pyautogui.click(self.x + x, self.y + y)
 
     def click_center(self, card: Card):
-        pyautogui.click(card.x + card.w // 2, card.y + card.h // 2)
+        self.click(card.x + card.w // 2, card.y + card.h // 2)
 
     def match_pair(self, card1: Card, card2: Card):
         self.click_center(card1)

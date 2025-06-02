@@ -17,6 +17,7 @@ class Think:
         self.cards: dict[Card, None | np.ndarray] = {}
 
     def set_cards(self, cards: list[Card]) -> None:
+        logger.info(f"Cartas encontradas: {len(cards)}")
         if len(cards) % 2 != 0:
             logger.error("Quantidade de cartas ímpar detectadas")
             raise Exception("Quantidade de cartas ímpar detectadas")
