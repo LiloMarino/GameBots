@@ -104,7 +104,7 @@ def executar_simulacao(
                 act.executar_jogada(move)
                 movimentos += 1
                 logger.info(f"Movimento {movimentos}/{max_movimentos}")
-                time.sleep(0.15)
+                time.sleep(0.2)
             else:
                 logger.info(f"Fim de jogo detectado na partida {partida}")
                 registrar_estatisticas(sensor, board, maiores_numeros, pontuacoes)

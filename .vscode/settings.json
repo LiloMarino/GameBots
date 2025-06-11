@@ -1,7 +1,7 @@
 {
-  "python.analysis.extraPaths": ["./distrocards"],
+  "python.analysis.extraPaths": ["./2048"],
   "python.autoComplete.extraPaths": [
-    "./distrocards"
+    "./2048"
   ],
   "conventionalCommits.scopes": [
     "distrocards",

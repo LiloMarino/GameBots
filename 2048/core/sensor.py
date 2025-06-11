@@ -417,13 +417,26 @@ class Sensor:
         for i, (x, y, w, h) in enumerate(tiles_ordenados):
             cv2.rectangle(screenshot, (x, y), (x + w, y + h), BLUE, 1)
             cx, cy = x + w // 2, y + h // 2
+            # Texto em preto como sombra (contorno)
             cv2.putText(
                 screenshot,
                 str(i),
                 (cx - 10, cy + 10),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
-                (0, 255, 255),
+                (0, 0, 0),  # Preto
+                2,  # Espessura maior
+                cv2.LINE_AA,
+            )
+
+            # Texto amarelo por cima
+            cv2.putText(
+                screenshot,
+                str(i),
+                (cx - 10, cy + 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 255),  # Amarelo
                 1,
                 cv2.LINE_AA,
             )
