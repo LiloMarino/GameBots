@@ -143,7 +143,7 @@ class Sensor:
         debug.save_image(mask, "mask_cards")
 
         # Detecta contornos
-        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         img_contorns = cv2.drawContours(screenshot.copy(), contours, -1, GREEN, 2)
         debug.save_image(img_contorns, "screenshot contornos")
 
@@ -158,7 +158,7 @@ class Sensor:
             aspect_ratio = w / h
             solidity = area_cnt / area_box
 
-            if 0.6 < aspect_ratio < 1.8 and solidity > 0.85:
+            if 0.6 < aspect_ratio < 1 and solidity > 0.85:
                 cartas_detectadas.append(Card(x, y, w, h))
                 cv2.rectangle(screenshot, (x, y), (x + w, y + h), GREEN, 2)
 
