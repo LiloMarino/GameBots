@@ -13,6 +13,7 @@ from core.constants import GREEN, RED
 # Tipos
 class CardDetection(Enum):
     COR = auto()
+    TEMPLATE = auto()
 
 
 class Card(NamedTuple):
@@ -36,6 +37,7 @@ class Sensor:
     def set_card_detection(self, card_detection: CardDetection):
         self.card_detection = {
             CardDetection.COR: self._detectar_cards_cor,
+            CardDetection.TEMPLATE: self._detectar_cards_template,
         }.get(card_detection, self._detectar_cards_cor)
 
     def get_window(self, window_name: str) -> dict[str, int]:
@@ -163,6 +165,41 @@ class Sensor:
         debug.save_image(screenshot, "contornos filtrados")
 
         return cartas_detectadas
+
+    def _detectar_cards_template(self) -> list[Card]:
+        screenshot = self.get_screenshot()
+        debug.save_image(screenshot, "screenshot_template")
+
+        # Carrega o template de carta (ajuste o nome conforme necessário)
+        template_path = self.TEMPLATES_DIR / "card_verso.png"
+        template = cv2.imread(str(template_path), cv2.IMREAD_COLOR)
+        if template is None:
+            raise FileNotFoundError(f"Template não encontrado: {template_path}")
+        h, w = template.shape[:2]
+
+        # Executa o template matching
+        result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+        threshold = 0.8
+        loc = np.where(result >= threshold)
+
+        # Agrupa resultados próximos usando Non-Maximum Suppression (opcional simplificado)
+        detections: list[Card] = []
+        seen_points: list[tuple[int, int]] = []
+
+        for pt in zip(*loc[::-1]):  # loc[::-1] -> (x, y)
+            x, y = pt
+            too_close = any(
+                abs(x - px) < w // 2 and abs(y - py) < h // 2 for px, py in seen_points
+            )
+            if too_close:
+                continue
+            seen_points.append((x, y))
+            detections.append(Card(x, y, w, h))
+            cv2.rectangle(screenshot, (x, y), (x + w, y + h), GREEN, 2)
+
+        debug.save_image(screenshot, "template_detections")
+
+        return detections
 
     def __del__(self):
         self.sct.close()

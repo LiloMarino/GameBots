@@ -6,7 +6,7 @@ import keyboard
 import pyautogui
 from core import debug
 from core.act import Act
-from core.sensor import Sensor
+from core.sensor import CardDetection, Sensor
 from core.think import Think
 from logger_config import logger
 
@@ -20,10 +20,10 @@ class Difficulty(Enum):
 class Bot:
     def __init__(self, hotkey="F8"):
         self.hotkey = hotkey
-        self.bot_ativo = True
+        self.bot_ativo = False
 
         # Componentes principais
-        self.sensor = Sensor("DistroCards")
+        self.sensor = Sensor("DistroCards", CardDetection.TEMPLATE)
         self.think = Think()
         self.act = Act(self.sensor.region)
 
@@ -56,9 +56,9 @@ class Bot:
         self.act.click(*coords)
 
         # Espera as cartas aparecerem
-        while self.sensor.match_template("card_verso") is None:
-            logger.debug("Esperando cartas aparecerem...")
-            time.sleep(0.5)
+        # while self.sensor.match_template("card_verso") is None:
+        #     logger.debug("Esperando cartas aparecerem...")
+        time.sleep(2)
 
     def run(self):
         while not self.bot_ativo:
