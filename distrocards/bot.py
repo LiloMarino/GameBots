@@ -1,20 +1,11 @@
 import threading
 import time
-from enum import Enum, auto
 
 import keyboard
-import pyautogui
-from core import debug
 from core.act import Act
-from core.sensor import CardDetection, Sensor
+from core.sensor import Difficulty, Sensor
 from core.think import Think
 from logger_config import logger
-
-
-class Difficulty(Enum):
-    EASY = auto()
-    MEDIUM = auto()
-    HARD = auto()
 
 
 class Bot:

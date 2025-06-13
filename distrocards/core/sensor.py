@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from enum import Enum, auto
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple
 
 import cv2
 import mss
@@ -11,8 +9,11 @@ import pygetwindow as gw
 from core import debug
 from core.constants import GREEN, RED
 
-if TYPE_CHECKING:
-    from bot import Difficulty
+
+class Difficulty(Enum):
+    EASY = auto()
+    MEDIUM = auto()
+    HARD = auto()
 
 
 # Tipos
@@ -36,9 +37,10 @@ class Sensor:
         self,
         window_name: str,
         card_detection: CardDetection,
+        difficulty: Difficulty = Difficulty.EASY,
     ) -> None:
         self.region = self.get_window(window_name)
-        self.difficulty = None
+        self.difficulty = difficulty
         self.sct = mss.mss()
         self.set_card_detection(card_detection)
 
@@ -191,6 +193,7 @@ class Sensor:
         template_filename = f"card_verso_{difficulty_name}.png"
         template_path = self.TEMPLATES_DIR / template_filename
         template = cv2.imread(str(template_path), cv2.IMREAD_COLOR)
+
         if template is None:
             raise FileNotFoundError(f"Template não encontrado: {template_path}")
         h, w = template.shape[:2]
