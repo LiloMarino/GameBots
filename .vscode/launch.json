@@ -9,9 +9,10 @@
             "name": "Depurador do Python: Arquivo Atual",
             "type": "debugpy",
             "request": "launch",
-            "cwd": "${workspaceFolder}\\distrocards",
+            "cwd": "${workspaceFolder}\\2048",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env" : {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"}
         }
     ]
 }

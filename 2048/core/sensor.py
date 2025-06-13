@@ -10,7 +10,7 @@ import numpy as np
 import pygetwindow as gw
 import pytesseract
 from core import debug
-from core.constants import BLUE, GREEN, TILE_SIZE
+from core.constants import BLUE, GREEN, RED, TILE_SIZE
 from logger_config import logger
 
 
@@ -243,7 +243,9 @@ class Sensor:
 
         # Detecta contornos
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        img_contorns = cv2.drawContours(screenshot.copy(), contours, -1, GREEN, 2)
+        img_contorns = cv2.drawContours(
+            cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR), contours, -1, RED, 3
+        )
         debug.save_image(img_contorns, "screenshot contornos 1")
 
         # Obtém o contorno de maior área (provavelmente a grid central)
