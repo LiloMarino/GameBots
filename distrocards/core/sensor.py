@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from enum import Enum, auto
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import cv2
 import mss
@@ -8,6 +10,9 @@ import numpy as np
 import pygetwindow as gw
 from core import debug
 from core.constants import GREEN, RED
+
+if TYPE_CHECKING:
+    from bot import Difficulty
 
 
 # Tipos
@@ -28,9 +33,12 @@ class Sensor:
     TEMPLATES_DIR = Path("templates")
 
     def __init__(
-        self, window_name: str, card_detection: CardDetection = CardDetection.COR
+        self,
+        window_name: str,
+        card_detection: CardDetection,
     ) -> None:
         self.region = self.get_window(window_name)
+        self.difficulty = None
         self.sct = mss.mss()
         self.set_card_detection(card_detection)
 
@@ -39,6 +47,9 @@ class Sensor:
             CardDetection.COR: self._detectar_cards_cor,
             CardDetection.TEMPLATE: self._detectar_cards_template,
         }.get(card_detection, self._detectar_cards_cor)
+
+    def set_difficulty(self, difficulty: Difficulty):
+        self.difficulty = difficulty
 
     def get_window(self, window_name: str) -> dict[str, int]:
         """Retorna a região da janela
@@ -176,7 +187,9 @@ class Sensor:
         debug.save_image(screenshot, "screenshot_template")
 
         # Carrega o template de carta (ajuste o nome conforme necessário)
-        template_path = self.TEMPLATES_DIR / "card_verso.png"
+        difficulty_name = self.difficulty.name.lower()
+        template_filename = f"card_verso_{difficulty_name}.png"
+        template_path = self.TEMPLATES_DIR / template_filename
         template = cv2.imread(str(template_path), cv2.IMREAD_COLOR)
         if template is None:
             raise FileNotFoundError(f"Template não encontrado: {template_path}")

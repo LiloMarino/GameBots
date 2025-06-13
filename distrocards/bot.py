@@ -40,6 +40,7 @@ class Bot:
 
     def start(self, difficulty: Difficulty) -> None:
         # Clica no play
+        self.sensor.set_difficulty(difficulty)
         coords = self.sensor.match_template("play")
         if coords is None:
             logger.error("Não foi possível iniciar o jogo")
