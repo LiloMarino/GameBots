@@ -129,6 +129,7 @@ class Sensor:
 
     def _detectar_cards_cor(self) -> list[Card]:
         screenshot = self.get_screenshot()
+        original = screenshot.copy()
         debug.save_image(screenshot, "screenshot")
 
         # Converte para HSV para segmentação por cor
@@ -158,7 +159,11 @@ class Sensor:
             aspect_ratio = w / h
             solidity = area_cnt / area_box
 
-            if 0.6 < aspect_ratio < 1 and solidity > 0.85:
+            test = original.copy()
+            cv2.rectangle(test, (x, y), (x + w, y + h), GREEN, 2)
+            debug.save_image(cv2.drawContours(test, [cnt], -1, RED, 2), "teste")
+
+            if 0.6 < aspect_ratio < 1 and solidity > 0.9:
                 cartas_detectadas.append(Card(x, y, w, h))
                 cv2.rectangle(screenshot, (x, y), (x + w, y + h), GREEN, 2)
 
