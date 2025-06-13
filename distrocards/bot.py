@@ -18,12 +18,12 @@ class Difficulty(Enum):
 
 
 class Bot:
-    def __init__(self, hotkey="F8"):
+    def __init__(self, card_detection, hotkey="F8"):
         self.hotkey = hotkey
         self.bot_ativo = False
 
         # Componentes principais
-        self.sensor = Sensor("DistroCards", CardDetection.TEMPLATE)
+        self.sensor = Sensor("DistroCards", card_detection)
         self.think = Think()
         self.act = Act(self.sensor.region)
 
