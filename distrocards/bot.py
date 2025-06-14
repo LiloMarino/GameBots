@@ -64,7 +64,19 @@ class Bot:
             while not self.bot_ativo:
                 time.sleep(1)
 
+            # Existe algum par que já descoberto?
+            pair = self.think.get_discovered_pair()
+            if pair:
+                card1, card2 = pair
+                self.act.match_pair(card1, card2)
+                logger.info(f"Par encontrado: {card1} <-> {card2}")
+                del self.think.cards[card1]
+                del self.think.cards[card2]
+                continue
+
+            # Se não tem nenhum par já conhecido, explora carta nova
             card1 = self.think.random_undiscovered()
+
             self.act.click_center(card1)
 
             # Aguarda um tempo para a carta virar (ajuste conforme necessário)
@@ -97,15 +109,6 @@ class Bot:
                     logger.info(f"Par encontrado: {card1} <-> {card2}")
                     del self.think.cards[card1]
                     del self.think.cards[card2]
-
-            # Existe algum par que foi descoberto?
-            pair = self.think.get_discovered_pair()
-            if pair:
-                card1, card2 = pair
-                self.act.match_pair(card1, card2)
-                logger.info(f"Par encontrado: {card1} <-> {card2}")
-                del self.think.cards[card1]
-                del self.think.cards[card2]
 
     def is_active(self):
         return self.bot_ativo
