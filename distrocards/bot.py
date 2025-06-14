@@ -48,8 +48,6 @@ class Bot:
         self.act.click(*coords)
 
         # Espera as cartas aparecerem
-        # while self.sensor.match_template("card_verso") is None:
-        #     logger.debug("Esperando cartas aparecerem...")
         time.sleep(2)
 
     def run(self):
@@ -77,13 +75,9 @@ class Bot:
             # Se não tem nenhum par já conhecido, explora carta nova
             card1 = self.think.random_undiscovered()
 
-            self.act.click_center(card1)
-
-            # Aguarda um tempo para a carta virar (ajuste conforme necessário)
-            # TODO
-            time.sleep(0.5)
-
             # Captura a imagem da carta
+            self.act.click_center(card1)
+            time.sleep(0.5)
             self.think.cards[card1] = self.sensor.capturar_carta(card1)
 
             # Tem par?
@@ -98,9 +92,9 @@ class Bot:
                 # Não tem par
                 logger.info(f"Par não encontrado: {card1}")
                 card2 = self.think.random_undiscovered()
-                self.act.click_center(card2)
 
-                # TODO
+                # Captura a imagem da carta
+                self.act.click_center(card2)
                 time.sleep(0.5)
                 self.think.cards[card2] = self.sensor.capturar_carta(card2)
 
