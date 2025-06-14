@@ -203,6 +203,17 @@ class Sensor:
         threshold = 0.8
         y_coords, x_coords = np.where(result >= threshold)
 
+        # Normaliza a matriz de resultado para o intervalo 0-255
+        confidence_map = cv2.normalize(result, None, 0, 255, cv2.NORM_MINMAX)
+        confidence_map = np.uint8(confidence_map)
+
+        # Converte para heatmap colorido
+        debug.save_image(confidence_map, "confidence_map")
+        heatmap = cv2.applyColorMap(confidence_map, cv2.COLORMAP_JET)
+
+        # Salva imagem
+        debug.save_image(heatmap, "template_confidence_map")
+
         boxes = []
         scores = []
 
