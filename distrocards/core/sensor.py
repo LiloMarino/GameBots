@@ -186,9 +186,9 @@ class Sensor:
 
     def _detectar_cards_template(self) -> list[Card]:
         screenshot = self.get_screenshot()
-        debug.save_image(screenshot, "screenshot_template")
+        debug.save_image(screenshot, "screenshot")
 
-        # Carrega o template de carta (ajuste o nome conforme necessário)
+        # Define o nome do template baseado na dificuldade
         difficulty_name = self.difficulty.name.lower()
         template_filename = f"card_verso_{difficulty_name}.png"
         template_path = self.TEMPLATES_DIR / template_filename
@@ -201,23 +201,26 @@ class Sensor:
         # Executa o template matching
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
         threshold = 0.8
-        loc = np.where(result >= threshold)
+        y_coords, x_coords = np.where(result >= threshold)
 
-        # Agrupa resultados próximos usando Non-Maximum Suppression (opcional simplificado)
+        boxes = []
+        scores = []
+
+        for x, y in zip(x_coords, y_coords):
+            boxes.append([x, y, w, h])
+            scores.append(float(result[y, x]))
+
+        # Aplica Non-Maximum Suppression
+        nms_threshold = 0.3
+        indices = cv2.dnn.NMSBoxes(boxes, scores, threshold, nms_threshold)
+
         detections: list[Card] = []
-        seen_points: list[tuple[int, int]] = []
 
-        for pt in zip(*loc[::-1]):  # loc[::-1] -> (x, y)
-            x, y = pt
-            too_close = any(
-                abs(x - px) < w // 2 and abs(y - py) < h // 2 for px, py in seen_points
-            )
-            if too_close:
-                continue
-            seen_points.append((x, y))
-            detections.append(Card(x, y, w, h))
-            cv2.rectangle(screenshot, (x, y), (x + w, y + h), GREEN, 2)
-
+        if len(indices) > 0:
+            for i in indices.flatten():
+                x, y, w, h = boxes[i]
+                detections.append(Card(x, y, w, h))
+                cv2.rectangle(screenshot, (x, y), (x + w, y + h), GREEN, 2)
         debug.save_image(screenshot, "template_detections")
 
         return detections
