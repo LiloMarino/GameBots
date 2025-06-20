@@ -1,7 +1,7 @@
 # Makefile
 
 # Caminho do script principal
-PASTA=2048
+PASTA=distrocards
 MAIN=main.py
 
 # Nome dos arquivos de saída
@@ -9,11 +9,12 @@ CPROFILE_OUT=saida.prof
 LINEPROFILE_OUT=saida.lprof
 
 # ---------- CProfile ----------
-snakeviz: cprofile
-	snakeviz $(CPROFILE_OUT)
-
 cprofile:
 	cd $(PASTA) && python -m cProfile -o ../$(CPROFILE_OUT) $(MAIN)
+	snakeviz $(CPROFILE_OUT)
+
+snakeviz:
+	snakeviz $(CPROFILE_OUT)
 
 # ---------- Line Profiler ----------
 lineprofile:

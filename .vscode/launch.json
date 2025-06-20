@@ -9,7 +9,7 @@
             "name": "Depurador do Python: Arquivo Atual",
             "type": "debugpy",
             "request": "launch",
-            "cwd": "${workspaceFolder}\\2048",
+            "cwd": "${fileDirname}",
             "program": "${file}",
             "console": "integratedTerminal",
             "env" : {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"}
