@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from enum import Enum, auto
 from typing import TYPE_CHECKING, Iterator
 
 import cv2
@@ -12,9 +13,15 @@ if TYPE_CHECKING:
     from core.sensor import Card
 
 
+class PairStrategy(Enum):
+    SSIM = auto()
+    TEMPLATE_MATCHING = auto()
+
+
 class Think:
-    def __init__(self) -> None:
+    def __init__(self, strategy: PairStrategy = PairStrategy.SSIM) -> None:
         self.cards: dict[Card, None | np.ndarray] = {}
+        self.set_pair_strategy(strategy)
 
     def set_cards(self, cards: list[Card]) -> None:
         logger.info(f"Cartas encontradas: {len(cards)}")
@@ -23,6 +30,13 @@ class Think:
             raise Exception("Quantidade de cartas ímpar detectadas")
 
         self.cards = {card: None for card in cards}
+
+    def set_pair_strategy(self, strategy: PairStrategy) -> None:
+        self.strategy = strategy
+        self.pair_check = {
+            PairStrategy.SSIM: self._is_pair_ssim,
+            PairStrategy.TEMPLATE_MATCHING: self._is_pair_template,
+        }.get(strategy, self._is_pair_ssim)
 
     def left_cards(self) -> int:
         return len(self.cards)
@@ -51,6 +65,12 @@ class Think:
         if img1 is None or img2 is None:
             return False
 
+        return self.pair_check(img1, img2, threshold)
+
+    def _is_pair_ssim(
+        self, img1: np.ndarray, img2: np.ndarray, threshold: float = 0.9
+    ) -> bool:
+
         # Converte para escala de cinza
         gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
         gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
@@ -63,6 +83,12 @@ class Think:
 
         # Limiar de similaridade
         return score > threshold
+
+    def _is_pair_template(
+        self, img1: np.ndarray, img2: np.ndarray, threshold: float = 0.9
+    ) -> bool:
+        # TODO: Implementar pareamento por template matching
+        pass
 
     @property
     def discovered_cards(self) -> Iterator[Card]:
