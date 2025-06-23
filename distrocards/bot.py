@@ -9,13 +9,13 @@ from logger_config import logger
 
 
 class Bot:
-    def __init__(self, card_detection, hotkey="F8"):
+    def __init__(self, card_detection, pair_strategy, hotkey="F8"):
         self.hotkey = hotkey
         self.bot_ativo = False
 
         # Componentes principais
         self.sensor = Sensor("DistroCards", card_detection)
-        self.think = Think()
+        self.think = Think(pair_strategy)
         self.act = Act(self.sensor.region)
 
         # Inicia atalho de teclado em uma thread

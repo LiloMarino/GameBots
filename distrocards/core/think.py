@@ -5,12 +5,12 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Iterator
 
 import cv2
+import numpy as np
 from core import debug
 from logger_config import logger
 from skimage.metrics import structural_similarity as ssim
 
 if TYPE_CHECKING:
-    import numpy as np
     from core.sensor import Card
 
 
