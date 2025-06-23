@@ -5,6 +5,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Iterator
 
 import cv2
+from core import debug
 from logger_config import logger
 from skimage.metrics import structural_similarity as ssim
 
@@ -87,8 +88,23 @@ class Think:
     def _is_pair_template(
         self, img1: np.ndarray, img2: np.ndarray, threshold: float = 0.9
     ) -> bool:
-        # TODO: Implementar pareamento por template matching
-        pass
+        # Redimensiona o template (img1) se maior que a imagem base (img2)
+        if img1.shape[0] > img2.shape[0] or img1.shape[1] > img2.shape[1]:
+            img1 = cv2.resize(img1, (img2.shape[1], img2.shape[0]))
+
+        # Faz o template matching
+        result = cv2.matchTemplate(img1, img2, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+        # Geração do mapa de confiança e heatmap para debug
+        confidence_map = cv2.normalize(result, None, 0, 255, cv2.NORM_MINMAX)
+        confidence_map = np.uint8(confidence_map)
+        debug.save_image(confidence_map, "confidence_pair_map")
+
+        heatmap = cv2.applyColorMap(confidence_map, cv2.COLORMAP_JET)
+        debug.save_image(heatmap, "heatmap_template_pair_match")
+
+        return max_val >= threshold
 
     @property
     def discovered_cards(self) -> Iterator[Card]:
