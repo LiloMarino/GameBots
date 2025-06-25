@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import time
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Iterator
 
@@ -19,9 +20,23 @@ class PairStrategy(Enum):
     TEMPLATE_MATCHING = auto()
 
 
+def medir_execucao(func):
+    """Decorator que mede o tempo da função e salva em self.pair_times."""
+
+    def wrapper(self, *args, **kwargs):
+        inicio = time.perf_counter_ns()
+        resultado = func(self, *args, **kwargs)
+        duracao = time.perf_counter_ns() - inicio
+        self.pair_times.append(duracao)
+        return resultado
+
+    return wrapper
+
+
 class Think:
     def __init__(self, strategy: PairStrategy = PairStrategy.SSIM) -> None:
         self.cards: dict[Card, None | np.ndarray] = {}
+        self.pair_times: list[int] = []
         self.set_pair_strategy(strategy)
 
     def set_cards(self, cards: list[Card]) -> None:
@@ -59,6 +74,7 @@ class Think:
                     return card1, card2
         return None
 
+    @medir_execucao
     def is_pair(self, card1: Card, card2: Card, threshold: float = 0.9) -> bool:
         img1 = self.cards[card1]
         img2 = self.cards[card2]
