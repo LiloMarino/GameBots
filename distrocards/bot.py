@@ -1,9 +1,10 @@
 import threading
 import time
 
+import cv2
 import keyboard
 from core.act import Act
-from core.sensor import Difficulty, Sensor
+from core.sensor import Card, Difficulty, Sensor
 from core.think import Think
 from logger_config import logger
 
@@ -49,6 +50,32 @@ class Bot:
 
         # Espera as cartas aparecerem
         time.sleep(2)
+
+    def verificar_par(self, card1: Card, card2: Card) -> bool:
+        time.sleep(1.0)  # Espera o jogo virar (caso tenha errado)
+
+        # Captura imagens atuais das cartas
+        nova_img1 = self.sensor.capturar_carta(card1)
+        nova_img2 = self.sensor.capturar_carta(card2)
+
+        verso = self.sensor.get_template_verso()
+
+        def is_verso(img) -> bool:
+            if img.shape[0] > verso.shape[0] or img.shape[1] > verso.shape[1]:
+                verso_resized = cv2.resize(verso, (img.shape[1], img.shape[0]))
+            else:
+                verso_resized = verso
+            res = cv2.matchTemplate(img, verso_resized, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, _ = cv2.minMaxLoc(res)
+
+            return max_val > 0.9
+
+        if is_verso(nova_img1) or is_verso(nova_img2):
+            self.think.pair_errors += 1
+            return False
+        else:
+            self.think.pair_hits += 1
+            return True
 
     def run(self):
         while not self.bot_ativo:

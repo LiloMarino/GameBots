@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Type
 
+import numpy as np
 import pandas as pd
 import pyautogui
 from bot import Bot, Difficulty
@@ -47,30 +48,44 @@ def medir_tempos_detection(
 
 
 def medir_tempos_pair(
-    bot: Bot, pair_strategy: PairStrategy, difficulty: Difficulty, n=5
+    bot: Bot, pair_strategy: PairStrategy, difficulty: Difficulty, n: int = 1
 ) -> pd.DataFrame:
-    tempos = []
+    dados = []
 
     for _ in range(n):
         pyautogui.hotkey("ctrl", "r")
         time.sleep(1)
+
         bot.start(difficulty)
         bot.think.set_pair_strategy(pair_strategy)
         bot.think.pair_times.clear()
+        bot.think.pair_hits = 0
+        bot.think.pair_errors = 0
+
         try:
             bot.run()
         except Exception as e:
             logger.error(e)
 
-        tempos.extend(bot.think.pair_times)
+        total_calls = len(bot.think.pair_times)
+        media_tempo = np.mean(bot.think.pair_times) if bot.think.pair_times else 0
+        acertos = bot.think.pair_hits
+        erros = bot.think.pair_errors
+        taxa_acerto = acertos / max(1, (acertos + erros))
 
-    return pd.DataFrame(
-        {
-            "metodo": pair_strategy.name,
-            "dificuldade": difficulty.name,
-            "tempo": tempos,
-        }
-    )
+        dados.append(
+            {
+                "metodo": pair_strategy.name,
+                "dificuldade": difficulty.name,
+                "tempo_medio_ns": media_tempo,
+                "chamadas": total_calls,
+                "acertos": acertos,
+                "erros": erros,
+                "taxa_acerto": taxa_acerto,
+            }
+        )
+
+    return pd.DataFrame(dados)
 
 
 def run_tests(
@@ -95,7 +110,7 @@ if __name__ == "__main__":
     bot = Bot(CardDetection.COR, PairStrategy.TEMPLATE_MATCHING)
     while not bot.is_active():
         time.sleep(1)
-    # bot.start(Difficulty.EASY)
+    # bot.start(Difficulty.HARD)
     # bot.run()
 
     run_tests(

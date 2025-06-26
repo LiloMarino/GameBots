@@ -37,6 +37,8 @@ class Think:
     def __init__(self, strategy: PairStrategy = PairStrategy.SSIM) -> None:
         self.cards: dict[Card, None | np.ndarray] = {}
         self.pair_times: list[int] = []
+        self.pair_hits = 0
+        self.pair_errors = 0
         self.set_pair_strategy(strategy)
 
     def set_cards(self, cards: list[Card]) -> None:

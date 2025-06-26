@@ -184,18 +184,22 @@ class Sensor:
 
         return cartas_detectadas
 
-    def _detectar_cards_template(self) -> list[Card]:
-        screenshot = self.get_screenshot()
-        debug.save_image(screenshot, "screenshot")
-
+    def get_template_verso(self):
         # Define o nome do template baseado na dificuldade
         difficulty_name = self.difficulty.name.lower()
         template_filename = f"card_verso_{difficulty_name}.png"
         template_path = self.TEMPLATES_DIR / template_filename
         template = cv2.imread(str(template_path), cv2.IMREAD_COLOR)
-
         if template is None:
             raise FileNotFoundError(f"Template não encontrado: {template_path}")
+
+        return template
+
+    def _detectar_cards_template(self) -> list[Card]:
+        screenshot = self.get_screenshot()
+        debug.save_image(screenshot, "screenshot")
+
+        template = self.get_template_verso()
         h, w = template.shape[:2]
 
         # Executa o template matching
