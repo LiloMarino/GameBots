@@ -52,7 +52,7 @@ class Bot:
         time.sleep(2)
 
     def verificar_par(self, card1: Card, card2: Card) -> bool:
-        time.sleep(1.0)  # Espera o jogo virar (caso tenha errado)
+        time.sleep(1.5)
 
         # Captura imagens atuais das cartas
         nova_img1 = self.sensor.capturar_carta(card1)
@@ -95,6 +95,7 @@ class Bot:
                 card1, card2 = pair
                 self.act.match_pair(card1, card2)
                 logger.info(f"Par encontrado: {card1} <-> {card2}")
+                self.verificar_par(card1, card2)
                 del self.think.cards[card1]
                 del self.think.cards[card2]
                 continue
@@ -113,6 +114,7 @@ class Bot:
                 # Faz o match
                 self.act.match_pair(card1, card2)
                 logger.info(f"Par encontrado: {card1} <-> {card2}")
+                self.verificar_par(card1, card2)
                 del self.think.cards[card1]
                 del self.think.cards[card2]
             else:
@@ -128,6 +130,7 @@ class Bot:
                 # Fez par?
                 if self.think.is_pair(card1, card2):
                     logger.info(f"Par encontrado: {card1} <-> {card2}")
+                    self.verificar_par(card1, card2)
                     del self.think.cards[card1]
                     del self.think.cards[card2]
 

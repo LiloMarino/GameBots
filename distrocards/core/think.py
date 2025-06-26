@@ -37,9 +37,13 @@ class Think:
     def __init__(self, strategy: PairStrategy = PairStrategy.SSIM) -> None:
         self.cards: dict[Card, None | np.ndarray] = {}
         self.pair_times: list[int] = []
+        self.threshold = 0.9
         self.pair_hits = 0
         self.pair_errors = 0
         self.set_pair_strategy(strategy)
+
+    def set_threshold(self, threshold: float) -> None:
+        self.threshold = threshold
 
     def set_cards(self, cards: list[Card]) -> None:
         logger.info(f"Cartas encontradas: {len(cards)}")
@@ -77,14 +81,20 @@ class Think:
         return None
 
     @medir_execucao
-    def is_pair(self, card1: Card, card2: Card, threshold: float = 0.9) -> bool:
+    def is_pair(self, card1: Card, card2: Card) -> bool:
         img1 = self.cards[card1]
         img2 = self.cards[card2]
 
         if img1 is None or img2 is None:
             return False
 
-        return self.pair_check(img1, img2, threshold)
+        h = min(img1.shape[0], img2.shape[0])
+        img1 = cv2.resize(img1, (int(img1.shape[1] * h / img1.shape[0]), h))
+        img2 = cv2.resize(img2, (int(img2.shape[1] * h / img2.shape[0]), h))
+        img_concat = np.hstack((img1, img2))
+        debug.save_image(img_concat, f"Par {card1} = {card2}")
+
+        return self.pair_check(img1, img2, self.threshold)
 
     def _is_pair_ssim(
         self, img1: np.ndarray, img2: np.ndarray, threshold: float = 0.9
@@ -115,12 +125,12 @@ class Think:
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
         # Geração do mapa de confiança e heatmap para debug
-        confidence_map = cv2.normalize(result, None, 0, 255, cv2.NORM_MINMAX)
-        confidence_map = np.uint8(confidence_map)
-        debug.save_image(confidence_map, "confidence_pair_map")
+        # confidence_map = cv2.normalize(result, None, 0, 255, cv2.NORM_MINMAX)
+        # confidence_map = np.uint8(confidence_map)
+        # debug.save_image(confidence_map, "confidence_pair_map")
 
-        heatmap = cv2.applyColorMap(confidence_map, cv2.COLORMAP_JET)
-        debug.save_image(heatmap, "heatmap_template_pair_match")
+        # heatmap = cv2.applyColorMap(confidence_map, cv2.COLORMAP_JET)
+        # debug.save_image(heatmap, "heatmap_template_pair_match")
 
         return max_val >= threshold
 

@@ -48,7 +48,11 @@ def medir_tempos_detection(
 
 
 def medir_tempos_pair(
-    bot: Bot, pair_strategy: PairStrategy, difficulty: Difficulty, n: int = 1
+    bot: Bot,
+    pair_strategy: PairStrategy,
+    difficulty: Difficulty,
+    threshold: float,
+    n: int = 1,
 ) -> pd.DataFrame:
     dados = []
 
@@ -58,6 +62,7 @@ def medir_tempos_pair(
 
         bot.start(difficulty)
         bot.think.set_pair_strategy(pair_strategy)
+        bot.think.set_threshold(threshold)
         bot.think.pair_times.clear()
         bot.think.pair_hits = 0
         bot.think.pair_errors = 0
@@ -71,17 +76,15 @@ def medir_tempos_pair(
         media_tempo = np.mean(bot.think.pair_times) if bot.think.pair_times else 0
         acertos = bot.think.pair_hits
         erros = bot.think.pair_errors
-        taxa_acerto = acertos / max(1, (acertos + erros))
 
         dados.append(
             {
                 "metodo": pair_strategy.name,
                 "dificuldade": difficulty.name,
-                "tempo_medio_ns": media_tempo,
+                "tempo_medio_chamada": media_tempo,
                 "chamadas": total_calls,
                 "acertos": acertos,
                 "erros": erros,
-                "taxa_acerto": taxa_acerto,
             }
         )
 
@@ -114,5 +117,20 @@ if __name__ == "__main__":
     # bot.run()
 
     run_tests(
-        bot, medir_tempos_pair, "resultados_think_distrocards.parquet", PairStrategy
+        bot,
+        lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.8),
+        "resultados_think_distrocards_quality_80.parquet",
+        PairStrategy,
+    )
+    run_tests(
+        bot,
+        lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.9),
+        "resultados_think_distrocards_quality_90.parquet",
+        PairStrategy,
+    )
+    run_tests(
+        bot,
+        lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.95),
+        "resultados_think_distrocards_quality_95.parquet",
+        PairStrategy,
     )
