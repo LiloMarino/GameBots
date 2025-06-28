@@ -52,7 +52,7 @@ def medir_tempos_pair(
     pair_strategy: PairStrategy,
     difficulty: Difficulty,
     threshold: float,
-    n: int = 10,
+    n: int = 20,
 ) -> pd.DataFrame:
     dados = []
 
