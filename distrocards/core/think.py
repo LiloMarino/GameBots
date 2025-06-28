@@ -88,11 +88,11 @@ class Think:
         if img1 is None or img2 is None:
             return False
 
-        h = min(img1.shape[0], img2.shape[0])
-        img1 = cv2.resize(img1, (int(img1.shape[1] * h / img1.shape[0]), h))
-        img2 = cv2.resize(img2, (int(img2.shape[1] * h / img2.shape[0]), h))
-        img_concat = np.hstack((img1, img2))
-        debug.save_image(img_concat, f"Par {card1} = {card2}")
+        # h = min(img1.shape[0], img2.shape[0])
+        # img1 = cv2.resize(img1, (int(img1.shape[1] * h / img1.shape[0]), h))
+        # img2 = cv2.resize(img2, (int(img2.shape[1] * h / img2.shape[0]), h))
+        # img_concat = np.hstack((img1, img2))
+        # debug.save_image(img_concat, f"Par {card1} = {card2}")
 
         return self.pair_check(img1, img2, self.threshold)
 

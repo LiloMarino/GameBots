@@ -52,13 +52,19 @@ def medir_tempos_pair(
     pair_strategy: PairStrategy,
     difficulty: Difficulty,
     threshold: float,
-    n: int = 1,
+    n: int = 10,
 ) -> pd.DataFrame:
     dados = []
 
     for _ in range(n):
         pyautogui.hotkey("ctrl", "r")
-        time.sleep(1)
+        time.sleep(1.5)
+
+        idx = len(dados) + 1
+        logger.info(
+            f"[{pair_strategy.name}-{difficulty.name}] "
+            f"Iteração {idx}/{n}  (threshold={threshold})"
+        )
 
         bot.start(difficulty)
         bot.think.set_pair_strategy(pair_strategy)
@@ -76,6 +82,8 @@ def medir_tempos_pair(
         media_tempo = np.mean(bot.think.pair_times) if bot.think.pair_times else 0
         acertos = bot.think.pair_hits
         erros = bot.think.pair_errors
+
+        logger.info(f"Acertos: {acertos}, Erros: {erros}")
 
         dados.append(
             {
@@ -100,7 +108,6 @@ def run_tests(
     dfs = []
     for metodo in enum:
         for dificuldade in Difficulty:
-            print(f"Executando: {metodo.name} + {dificuldade.name}")
             df_temp = func(bot, metodo, dificuldade)
             dfs.append(df_temp)
 

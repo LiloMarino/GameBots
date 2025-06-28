@@ -52,7 +52,7 @@ class Bot:
         time.sleep(2)
 
     def verificar_par(self, card1: Card, card2: Card) -> bool:
-        time.sleep(1.5)
+        time.sleep(2)
 
         # Captura imagens atuais das cartas
         nova_img1 = self.sensor.capturar_carta(card1)
