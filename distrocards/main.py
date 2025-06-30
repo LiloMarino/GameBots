@@ -56,11 +56,10 @@ def medir_tempos_pair(
 ) -> pd.DataFrame:
     dados = []
 
-    for _ in range(n):
+    for idx in range(n):
         pyautogui.hotkey("ctrl", "r")
         time.sleep(1.5)
 
-        idx = len(dados) + 1
         logger.info(
             f"[{pair_strategy.name}-{difficulty.name}] "
             f"Iteração {idx}/{n}  (threshold={threshold})"
@@ -69,6 +68,7 @@ def medir_tempos_pair(
         bot.start(difficulty)
         bot.think.set_pair_strategy(pair_strategy)
         bot.think.set_threshold(threshold)
+        num_cartas = len(bot.sensor.get_cards())
         bot.think.pair_times.clear()
         bot.think.pair_hits = 0
         bot.think.pair_errors = 0
@@ -89,10 +89,12 @@ def medir_tempos_pair(
             {
                 "metodo": pair_strategy.name,
                 "dificuldade": difficulty.name,
+                "threshold": threshold,
                 "tempo_medio_chamada": media_tempo,
                 "chamadas": total_calls,
                 "acertos": acertos,
                 "erros": erros,
+                "num_cartas": num_cartas,
             }
         )
 
@@ -122,22 +124,34 @@ if __name__ == "__main__":
         time.sleep(1)
     # bot.start(Difficulty.HARD)
     # bot.run()
+    dfs = []
+    for threshold in [0.8, 0.9, 0.95]:
+        for metodo in PairStrategy:
+            df_temp = medir_tempos_pair(bot, metodo, Difficulty.HARD, threshold, 100)
+            dfs.append(df_temp)
 
-    run_tests(
-        bot,
-        lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.8),
-        "resultados_think_distrocards_quality_80.parquet",
-        PairStrategy,
+    df_final = pd.concat(dfs, ignore_index=True)
+    df_final.to_parquet(
+        RESULTADOS_DIR / "resultados_think_distrocards_quality_hard.parquet",
+        index=False,
     )
-    run_tests(
-        bot,
-        lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.9),
-        "resultados_think_distrocards_quality_90.parquet",
-        PairStrategy,
-    )
-    run_tests(
-        bot,
-        lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.95),
-        "resultados_think_distrocards_quality_95.parquet",
-        PairStrategy,
-    )
+    df_final.head()
+
+    # run_tests(
+    #     bot,
+    #     lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.8),
+    #     "resultados_think_distrocards_quality_80.parquet",
+    #     PairStrategy,
+    # )
+    # run_tests(
+    #     bot,
+    #     lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.9),
+    #     "resultados_think_distrocards_quality_90.parquet",
+    #     PairStrategy,
+    # )
+    # run_tests(
+    #     bot,
+    #     lambda b, m, d: medir_tempos_pair(b, m, d, threshold=0.95),
+    #     "resultados_think_distrocards_quality_95.parquet",
+    #     PairStrategy,
+    # )
