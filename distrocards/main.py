@@ -131,11 +131,12 @@ if __name__ == "__main__":
             dfs.append(df_temp)
 
     df_final = pd.concat(dfs, ignore_index=True)
-    df_final.to_parquet(
-        RESULTADOS_DIR / "resultados_think_distrocards_quality_hard.parquet",
-        index=False,
-    )
-    df_final.head()
+    destino = RESULTADOS_DIR / "resultados_think_distrocards_quality_hard.parquet"
+    if destino.exists():
+        df_antigo = pd.read_parquet(destino)
+        df_final = pd.concat([df_antigo, df_final], ignore_index=True)
+    df_final.to_parquet(destino, index=False)
+    print(df_final.head())
 
     # run_tests(
     #     bot,
