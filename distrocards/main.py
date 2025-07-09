@@ -125,9 +125,15 @@ if __name__ == "__main__":
     # bot.start(Difficulty.HARD)
     # bot.run()
     dfs = []
-    for threshold in [0.8, 0.9, 0.95]:
+
+    test_plan = [
+        (Difficulty.EASY, 0.80),  # Fácil   → 80 %
+        (Difficulty.HARD, 0.98),  # Difícil → 98 %
+        (Difficulty.HARD, 0.95),  # Difícil → 95 %
+    ]
+    for dificuldade, threshold in test_plan:
         for metodo in PairStrategy:
-            df_temp = medir_tempos_pair(bot, metodo, Difficulty.HARD, threshold, 100)
+            df_temp = medir_tempos_pair(bot, metodo, dificuldade, threshold, 50)
             dfs.append(df_temp)
 
     df_final = pd.concat(dfs, ignore_index=True)
