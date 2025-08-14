@@ -4,7 +4,12 @@
     // Para obter mais informações, acesse: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "name": "Depurador do Python: Anexar usando o ID do Processo",
+            "type": "debugpy",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        },
         {
             "name": "Depurador do Python: Arquivo Atual",
             "type": "debugpy",
@@ -12,7 +17,9 @@
             "cwd": "${fileDirname}",
             "program": "${file}",
             "console": "integratedTerminal",
-            "env" : {"PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"}
+            "env": {
+                "PYDEVD_WARN_SLOW_RESOLVE_TIMEOUT": "2"
+            }
         }
     ]
 }
