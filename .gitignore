@@ -177,3 +177,7 @@ cython_debug/
 debug/
 *.prof
 *.lprof
+
+# YOLO
+*.pt
+runs/
