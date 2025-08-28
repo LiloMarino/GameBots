@@ -1,70 +1,65 @@
+import time
 from typing import Tuple
 
-import pyautogui
 from logger_config import logger
+from pynput.keyboard import Controller, Key
 
 
 class Act:
-    def __init__(self):
-        self.current_key = None
+    def __init__(self, step_time: float = 0.05):
+        self.kb = Controller()
+        self.step_time = step_time
 
     def desvia(self, vetor: Tuple[int, int]):
         """
         Converte um vetor (dx, dy) em movimento e executa a jogada.
-        Se o vetor for (0,0), solta a tecla atual.
+        Pressiona a tecla correspondente por step_time segundos.
         """
         dx, dy = vetor
 
-        # Nada pra fazer → solta a tecla se estiver segurando alguma
+        # Nada pra fazer
         if dx == 0 and dy == 0:
-            if self.current_key:
-                pyautogui.keyUp(self.current_key)
-                self.current_key = None
             return
 
-        # Decide a direção
+        # Decide direção
         if abs(dx) > abs(dy):
-            movimento = "right" if dx > 0 else "left"
+            key_to_press = Key.right if dx > 0 else Key.left
         else:
-            movimento = "down" if dy > 0 else "up"
+            key_to_press = Key.down if dy > 0 else Key.up
 
-        # Se a direção mudou, solta a antiga e segura a nova
-        logger.info(f"Desvia ({dx}, {dy}) -> {movimento}")
-        if movimento != self.current_key:
-            if self.current_key:
-                pyautogui.keyUp(self.current_key)
-            pyautogui.keyDown(movimento)
-            self.current_key = movimento
+        # Envia o comando curto
+        logger.info(f"Desvia ({dx}, {dy}) -> {key_to_press}")
+        self.kb.press(key_to_press)
+        time.sleep(self.step_time)
+        self.kb.release(key_to_press)
 
     def fire(self):
         """Disparo único (Z)."""
-        pyautogui.press("z")
+        self.kb.press("z")
+        self.kb.release("z")
 
     def continuous_fire(self, enable: bool):
         """Liga ou desliga disparo contínuo (Z pressionado)."""
         if enable:
-            pyautogui.keyDown("z")
+            self.kb.press("z")
         else:
-            pyautogui.keyUp("z")
+            self.kb.release("z")
 
     def focused_mode(self, enable: bool):
         """Liga ou desliga modo focado (Shift pressionado)."""
         if enable:
-            pyautogui.keyDown("shift")
+            self.kb.press(Key.shift)
         else:
-            pyautogui.keyUp("shift")
+            self.kb.release(Key.shift)
 
     def bomb(self):
         """Usa bomba (X)."""
-        pyautogui.press("x")
+        self.kb.press("x")
+        self.kb.release("x")
 
     def speedup_dialog(self, enable: bool = True):
         """Liga ou desliga aceleração de diálogos (Ctrl pressionado)."""
         if enable:
-            pyautogui.keyDown("ctrl")
+            self.kb.press(Key.ctrl)
         else:
-            pyautogui.keyUp("ctrl")
-
-    def click(self, x: int, y: int):
-        """Clique na tela (menu, etc)."""
-        pyautogui.click(x, y)
+            self.kb.release(Key.ctrl)

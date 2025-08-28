@@ -3,6 +3,7 @@ import random
 from enum import Enum, auto
 from typing import Tuple
 
+import cv2
 from core.sensor import BoundingBox, Detections
 
 
@@ -18,8 +19,14 @@ def _bbox_center(bbox: BoundingBox) -> Tuple[int, int]:
 
 class Think:
     def __init__(
-        self, dodge_strategy: DodgeStrategy = DodgeStrategy.MENOR_DISTANCIA
+        self,
+        region: dict[str, int],
+        dodge_strategy: DodgeStrategy = DodgeStrategy.MENOR_DISTANCIA,
     ) -> None:
+        self.region = region
+        self.center_x_offset = -225
+        self.center_y_offset = 200
+        self.perp_count = 0
         self.set_dodge_strategy(dodge_strategy)
 
     def set_dodge_strategy(self, dodge_strategy: DodgeStrategy):
@@ -55,8 +62,9 @@ class Think:
 
     def _dodge_menor_distancia(self, detections: Detections) -> Tuple[int, int]:
         """
-        Desvia do inimigo/bala mais próximo escolhendo aleatoriamente
-        entre as duas direções perpendiculares ao vetor de aproximação.
+        Desvia do inimigo/bala mais próxima escolhendo entre as duas
+        direções perpendiculares ao vetor de aproximação, escolhendo
+        aquela que aproxima o player do centro da janela.
         """
         if not detections.players:
             return (0, 0)  # Sem player detectado
@@ -76,9 +84,17 @@ class Think:
         # Direções perpendiculares
         perp1 = (-vy, vx)
         perp2 = (vy, -vx)
+        perp_chose = True
 
-        # Escolha aleatória entre as duas
-        return random.choice([perp1, perp2])
+        self.perp_count += 1
+        if self.perp_count % 2 == 0:
+            perp_chose = False if perp_chose else True
+
+        if perp_chose:
+            perp = perp1
+        else:
+            perp = perp2
+        return perp
 
     def _dodge_quadrante(self, detections: Detections) -> Tuple[int, int]:
         return (0, 0)
@@ -88,7 +104,7 @@ class Think:
     # ============================================================
 
     @staticmethod
-    def _dist(a: Tuple[int, int], b: Tuple[int, int]) -> float:
+    def _dist(a: Tuple[float, float], b: Tuple[float, float]) -> float:
         return math.hypot(a[0] - b[0], a[1] - b[1])
 
     @staticmethod

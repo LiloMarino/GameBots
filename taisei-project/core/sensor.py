@@ -32,6 +32,46 @@ class Detections(NamedTuple):
     players: list[BoundingBox]
 
 
+def draw_axes(
+    image, region, center_x_offset=0, center_y_offset=0, color=(0, 0, 255), thickness=2
+):
+    """
+    Desenha linhas representando os eixos X e Y no centro da região ajustado pelos offsets.
+
+    Args:
+        image: imagem original (numpy array)
+        region: dict com 'top', 'left', 'width', 'height'
+        center_x_offset: deslocamento horizontal do centro
+        center_y_offset: deslocamento vertical do centro
+        color: cor da linha (B,G,R)
+        thickness: espessura da linha
+    """
+    # Centro ajustado
+    center_x = int(region["left"] + region["width"] / 2 + center_x_offset)
+    center_y = int(region["top"] + region["height"] / 2 + center_y_offset)
+
+    # Linhas horizontais e verticais
+    cv2.line(
+        image,
+        (region["left"], center_y),
+        (region["left"] + region["width"], center_y),
+        color,
+        thickness,
+    )
+    cv2.line(
+        image,
+        (center_x, region["top"]),
+        (center_x, region["top"] + region["height"]),
+        color,
+        thickness,
+    )
+
+    # Opcional: desenhar um círculo no centro
+    cv2.circle(image, (center_x, center_y), 5, color, -1)
+
+    return image
+
+
 class Sensor:
     TEMPLATES_DIR = Path("templates")
     MODEL_PATH = "runs/detect/train/weights/best.pt"
@@ -54,6 +94,13 @@ class Sensor:
         )
         logger.info("Janela aberta. Posicione no segundo monitor.")
         cv2.waitKey(1)
+        # img_with_axes = draw_axes(
+        #     self.get_screenshot(),
+        #     region=self.region,
+        #     center_x_offset=-225,
+        #     center_y_offset=0,
+        # )
+        # debug.save_image(img_with_axes, "debug_axes")
 
     def set_difficulty(self, difficulty: Difficulty):
         self.difficulty = difficulty
