@@ -1,3 +1,4 @@
+import itertools
 from enum import Enum, auto
 from pathlib import Path
 from typing import NamedTuple
@@ -6,6 +7,7 @@ import cv2
 import mss
 import numpy as np
 import pygetwindow as gw
+from core import debug
 from ultralytics import YOLO
 
 
@@ -42,6 +44,8 @@ class Sensor:
         self.difficulty = difficulty
         self.sct = mss.mss()
         self.model = YOLO(self.MODEL_PATH)
+        self._frame_counter = itertools.count(1)
+        self._last_player_frame = None
 
     def set_difficulty(self, difficulty: Difficulty):
         self.difficulty = difficulty
@@ -128,9 +132,7 @@ class Sensor:
         """
         Executa o YOLO na captura da tela e retorna listas separadas
         de bounding boxes para cada classe.
-
-        Returns:
-            Detections: objeto com listas de BoundingBox para bullets, enemies e players.
+        Último frame do player é salvo se o player não for detectado.
         """
         screenshot = self.get_screenshot()
         results = self.model(screenshot, verbose=False)
@@ -151,6 +153,23 @@ class Sensor:
                 enemies.append(bbox)
             elif cls_id == 2:  # Player
                 players.append(bbox)
+
+        debug_img = results[0].plot()  # Renderiza boxes + confidence
+
+        # Salva frame caso o player tenha morrido
+        if players:
+            self._last_player_frame = debug_img.copy()
+        elif self._last_player_frame is not None:
+            debug_img = self._last_player_frame
+            frame_idx = next(self._frame_counter)
+            debug.save_image(debug_img, f"lost_player_{frame_idx:03d}")
+
+        # frame_idx = next(self._frame_counter)
+        # debug.save_image(debug_img, f"frame_{frame_idx:03d}")
+
+        # Janela em tempo real
+        cv2.imshow("YOLO Debug", debug_img)
+        cv2.waitKey(1)
 
         return Detections(bullets=bullets, enemies=enemies, players=players)
 
