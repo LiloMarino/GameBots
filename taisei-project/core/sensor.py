@@ -8,6 +8,7 @@ import mss
 import numpy as np
 import pygetwindow as gw
 from core import debug
+from logger_config import logger
 from ultralytics import YOLO
 
 
@@ -46,6 +47,13 @@ class Sensor:
         self.model = YOLO(self.MODEL_PATH)
         self._frame_counter = itertools.count(1)
         self._last_player_frame = None
+        self.scale = 0.5
+        cv2.imshow(
+            "YOLO Debug",
+            cv2.resize(self.get_screenshot(), (0, 0), fx=self.scale, fy=self.scale),
+        )
+        logger.info("Janela aberta. Posicione no segundo monitor.")
+        cv2.waitKey(1)
 
     def set_difficulty(self, difficulty: Difficulty):
         self.difficulty = difficulty
@@ -162,12 +170,13 @@ class Sensor:
         elif self._last_player_frame is not None:
             debug_img = self._last_player_frame
             frame_idx = next(self._frame_counter)
-            debug.save_image(debug_img, f"lost_player_{frame_idx:03d}")
+            # debug.save_image(debug_img, f"lost_player_{frame_idx:03d}")
 
         # frame_idx = next(self._frame_counter)
         # debug.save_image(debug_img, f"frame_{frame_idx:03d}")
 
         # Janela em tempo real
+        debug_img = cv2.resize(debug_img, (0, 0), fx=self.scale, fy=self.scale)
         cv2.imshow("YOLO Debug", debug_img)
         cv2.waitKey(1)
 

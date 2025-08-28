@@ -1,25 +1,40 @@
 from typing import Tuple
 
 import pyautogui
+from logger_config import logger
 
 
 class Act:
+    def __init__(self):
+        self.current_key = None
+
     def desvia(self, vetor: Tuple[int, int]):
         """
         Converte um vetor (dx, dy) em movimento e executa a jogada.
-        Se o vetor for (0,0), não faz nada.
+        Se o vetor for (0,0), solta a tecla atual.
         """
         dx, dy = vetor
 
+        # Nada pra fazer → solta a tecla se estiver segurando alguma
         if dx == 0 and dy == 0:
-            return  # Nada a fazer
+            if self.current_key:
+                pyautogui.keyUp(self.current_key)
+                self.current_key = None
+            return
 
+        # Decide a direção
         if abs(dx) > abs(dy):
             movimento = "right" if dx > 0 else "left"
         else:
             movimento = "down" if dy > 0 else "up"
 
-        pyautogui.press(movimento)
+        # Se a direção mudou, solta a antiga e segura a nova
+        logger.info(f"Desvia ({dx}, {dy}) -> {movimento}")
+        if movimento != self.current_key:
+            if self.current_key:
+                pyautogui.keyUp(self.current_key)
+            pyautogui.keyDown(movimento)
+            self.current_key = movimento
 
     def fire(self):
         """Disparo único (Z)."""

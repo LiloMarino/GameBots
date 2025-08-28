@@ -35,6 +35,20 @@ class Think:
         """
         return self.dodge_strategy(detections)
 
+    def is_player_in_danger(self, detections: Detections) -> bool:
+        """
+        Retorna True se algum tiro intersecta a hitbox do jogador.
+        """
+        if not detections.players:
+            return False  # Nenhum player detectado
+
+        player = detections.players[0]
+        for bullet in detections.bullets:
+            if self._intersect(player, bullet):
+                return True
+
+        return False
+
     # ============================================================
     # Estrategias
     # ============================================================
@@ -76,3 +90,10 @@ class Think:
     @staticmethod
     def _dist(a: Tuple[int, int], b: Tuple[int, int]) -> float:
         return math.hypot(a[0] - b[0], a[1] - b[1])
+
+    @staticmethod
+    def _intersect(a: BoundingBox, b: BoundingBox) -> bool:
+        """
+        Verifica se duas bounding boxes se intersectam.
+        """
+        return not (a.x2 < b.x1 or a.x1 > b.x2 or a.y2 < b.y1 or a.y1 > b.y2)
