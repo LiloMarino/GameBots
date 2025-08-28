@@ -28,7 +28,7 @@ class Think:
             DodgeStrategy.QUADRANTE: self._dodge_quadrante,
         }.get(dodge_strategy, self._dodge_menor_distancia)
 
-    def decide(self, detections: Detections) -> Tuple[int, int]:
+    def think(self, detections: Detections) -> Tuple[int, int]:
         """
         Decide o vetor de destino baseado na estratégia de desvio configurada.
         Retorna (dx, dy) relativo ao player.

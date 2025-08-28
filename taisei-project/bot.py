@@ -64,5 +64,23 @@ class Bot:
         while not self.bot_ativo:
             time.sleep(1)
 
+        # Alterar para enquanto estiver vidas
+        self.act.continuous_fire(True)
+        player_not_detected = 0
+        while player_not_detected < 20:
+            while not self.bot_ativo:
+                self.act.continuous_fire(False)
+                time.sleep(1)
+
+            detections = self.sensor.get_objects()
+            if not detections.players:
+                player_not_detected += 1
+                continue
+            else:
+                player_not_detected = 0
+
+            vector = self.think.think(detections)
+            self.act.desvia(vector)
+
     def is_active(self):
         return self.bot_ativo
