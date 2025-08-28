@@ -19,10 +19,10 @@ class Difficulty(Enum):
 
 
 class BoundingBox(NamedTuple):
-    x_min: int
-    y_min: int
-    x_max: int
-    y_max: int
+    x1: int
+    y1: int
+    x2: int
+    y2: int
 
 
 class Detections(NamedTuple):
@@ -175,3 +175,4 @@ class Sensor:
 
     def __del__(self):
         self.sct.close()
+        cv2.destroyAllWindows()
