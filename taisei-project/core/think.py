@@ -3,7 +3,7 @@ import random
 from enum import Enum, auto
 from typing import Tuple
 
-from sense import BoundingBox, Detections
+from core.sensor import BoundingBox, Detections
 
 
 class DodgeStrategy(Enum):
