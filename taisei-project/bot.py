@@ -4,17 +4,17 @@ import time
 import keyboard
 from core.act import Act
 from core.sensor import Difficulty, Sensor
-from core.think import Think
+from core.think import DodgeStrategy, Think
 from logger_config import logger
 
 
 class Bot:
-    def __init__(self, dodge_strategy, hotkey="F8"):
+    def __init__(self, dodge_strategy: DodgeStrategy, hotkey="F8"):
         self.hotkey = hotkey
         self.bot_ativo = False
 
         # Componentes principais
-        self.sensor = Sensor("Taisei Project")
+        self.sensor = Sensor("Taisei Project v1.4.4")
         self.think = Think(dodge_strategy)
         self.act = Act()
 
@@ -38,7 +38,7 @@ class Bot:
             logger.error("Não foi possível iniciar o jogo")
             raise Exception("Não foi possivel iniciar o jogo")
         self.act.fire()
-        time.sleep(0.2)
+        time.sleep(1)
 
         # Seleciona a dificuldade
         difficulty_template = f"{difficulty.name.lower()}"
@@ -47,7 +47,7 @@ class Bot:
             logger.error("Não foi possível selecionar a dificuldade")
             raise Exception("Não foi possivel selecionar a dificuldade")
         self.act.fire()
-        time.sleep(0.2)
+        time.sleep(1)
 
         # Seleciona a personagem Reimu
         coords = self.sensor.match_template("reimu")
@@ -55,7 +55,7 @@ class Bot:
             logger.error("Não foi possível selecionar a dificuldade")
             raise Exception("Não foi possivel selecionar a dificuldade")
         self.act.fire()
-        time.sleep(0.2)
+        time.sleep(1)
 
         # Espera o jogo iniciar
         time.sleep(2)
