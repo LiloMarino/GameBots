@@ -22,11 +22,12 @@ class Think:
         self,
         region: dict[str, int],
         dodge_strategy: DodgeStrategy = DodgeStrategy.MENOR_DISTANCIA,
+        threshold_distance: float = 300,
     ) -> None:
         self.region = region
-        self.center_x_offset = -225
-        self.center_y_offset = 200
         self.perp_count = 0
+        self.initial_player_pos: tuple[int, int] | None = None
+        self.threshold_distance = threshold_distance
         self.set_dodge_strategy(dodge_strategy)
 
     def set_dodge_strategy(self, dodge_strategy: DodgeStrategy):
@@ -61,40 +62,44 @@ class Think:
     # ============================================================
 
     def _dodge_menor_distancia(self, detections: Detections) -> Tuple[int, int]:
-        """
-        Desvia do inimigo/bala mais próxima escolhendo entre as duas
-        direções perpendiculares ao vetor de aproximação, escolhendo
-        aquela que aproxima o player do centro da janela.
-        """
         if not detections.players:
-            return (0, 0)  # Sem player detectado
+            return (0, 0)
 
         player = _bbox_center(detections.players[0])
+
+        # Salva posição inicial na primeira chamada
+        if self.initial_player_pos is None:
+            self.initial_player_pos = player
+
+        # Vetores ameaça → player
         threats = detections.bullets + detections.enemies
         if not threats:
-            return (0, 0)  # Nada para desviar
+            return (0, 0)
 
-        # Ameaça mais próxima
         closest = min(threats, key=lambda b: self._dist(player, _bbox_center(b)))
         cx, cy = _bbox_center(closest)
-
-        # Vetor ameaça → player
         vx, vy = player[0] - cx, player[1] - cy
 
         # Direções perpendiculares
         perp1 = (-vy, vx)
         perp2 = (vy, -vx)
-        perp_chose = True
 
-        self.perp_count += 1
-        if self.perp_count % 2 == 0:
-            perp_chose = False if perp_chose else True
+        # Distância do player à posição inicial
+        dist_to_center = self._dist(player, self.initial_player_pos)
 
-        if perp_chose:
-            perp = perp1
+        # Se estiver distante demais, escolhe direção que aproxima do centro
+        if dist_to_center > self.threshold_distance:
+            perp1_dist = self._dist(
+                (player[0] + perp1[0], player[1] + perp1[1]), self.initial_player_pos
+            )
+            perp2_dist = self._dist(
+                (player[0] + perp2[0], player[1] + perp2[1]), self.initial_player_pos
+            )
+            perp = perp1 if perp1_dist < perp2_dist else perp2
         else:
-            perp = perp2
-        return perp2
+            perp = perp1
+
+        return perp
 
     def _dodge_quadrante(self, detections: Detections) -> Tuple[int, int]:
         return (0, 0)
