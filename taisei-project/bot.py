@@ -70,7 +70,7 @@ class Bot:
         # Alterar para enquanto estiver vidas
         self.act.continuous_fire(True)
         player_not_detected = 0
-        while True or player_not_detected < 20:
+        while player_not_detected < 50:
             while not self.bot_ativo:
                 self.act.continuous_fire(False)
                 time.sleep(1)

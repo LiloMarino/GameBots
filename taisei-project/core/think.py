@@ -94,7 +94,7 @@ class Think:
             perp = perp1
         else:
             perp = perp2
-        return perp
+        return perp2
 
     def _dodge_quadrante(self, detections: Detections) -> Tuple[int, int]:
         return (0, 0)
