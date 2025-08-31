@@ -1,3 +1,4 @@
+import math
 import time
 from typing import Tuple
 
@@ -13,25 +14,43 @@ class Act:
     def desvia(self, vetor: Tuple[int, int]):
         """
         Converte um vetor (dx, dy) em movimento e executa a jogada.
-        Pressiona a tecla correspondente por step_time segundos.
+        Suporta 8 direções: N, NE, E, SE, S, SW, W, NW.
         """
         dx, dy = vetor
 
-        # Nada pra fazer
         if dx == 0 and dy == 0:
             return
 
-        # Decide direção
-        if abs(dx) > abs(dy):
-            key_to_press = Key.right if dx > 0 else Key.left
-        else:
-            key_to_press = Key.down if dy > 0 else Key.up
+        # Ângulo do vetor (em graus, normalizado 0..360)
+        angle = math.degrees(math.atan2(dy, dx))
+        if angle < 0:
+            angle += 360
 
-        # Envia o comando curto
-        logger.info(f"Desvia ({dx}, {dy}) -> {key_to_press}")
-        self.kb.press(key_to_press)
+        # Define a região (cada 45°)
+        if 337.5 <= angle or angle < 22.5:
+            keys = [Key.right]  # E
+        elif 22.5 <= angle < 67.5:
+            keys = [Key.up, Key.right]  # NE
+        elif 67.5 <= angle < 112.5:
+            keys = [Key.up]  # N
+        elif 112.5 <= angle < 157.5:
+            keys = [Key.up, Key.left]  # NW
+        elif 157.5 <= angle < 202.5:
+            keys = [Key.left]  # W
+        elif 202.5 <= angle < 247.5:
+            keys = [Key.down, Key.left]  # SW
+        elif 247.5 <= angle < 292.5:
+            keys = [Key.down]  # S
+        elif 292.5 <= angle < 337.5:
+            keys = [Key.down, Key.right]  # SE
+
+        # Pressiona as teclas correspondentes
+        logger.info(f"Desvia ({dx}, {dy}) ângulo={angle:.1f}° -> {keys}")
+        for k in keys:
+            self.kb.press(k)
         time.sleep(self.step_time)
-        self.kb.release(key_to_press)
+        for k in keys:
+            self.kb.release(k)
 
     def fire(self):
         """Disparo único (Z)."""
