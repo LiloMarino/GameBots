@@ -3,8 +3,8 @@ import random
 from enum import Enum, auto
 from typing import Tuple
 
-import cv2
 from core.sensor import BoundingBox, Detections
+from logger_config import logger
 
 
 class DodgeStrategy(Enum):
@@ -23,11 +23,13 @@ class Think:
         region: dict[str, int],
         dodge_strategy: DodgeStrategy = DodgeStrategy.MENOR_DISTANCIA,
         threshold_distance: float = 300,
+        reset_distance: float = 50,
     ) -> None:
         self.region = region
-        self.perp_count = 0
         self.initial_player_pos: tuple[int, int] | None = None
         self.threshold_distance = threshold_distance
+        self.reset_distance = reset_distance
+        self.returning_to_center = False
         self.set_dodge_strategy(dodge_strategy)
 
     def set_dodge_strategy(self, dodge_strategy: DodgeStrategy):
@@ -69,7 +71,8 @@ class Think:
 
         # Salva posição inicial na primeira chamada
         if self.initial_player_pos is None:
-            self.initial_player_pos = player
+            self.initial_player_pos = (player[0], player[1] - 50)
+            logger.info("Posição inicial: %s", self.initial_player_pos)
 
         # Vetores ameaça → player
         threats = detections.bullets + detections.enemies
@@ -87,8 +90,17 @@ class Think:
         # Distância do player à posição inicial
         dist_to_center = self._dist(player, self.initial_player_pos)
 
-        # Se estiver distante demais, escolhe direção que aproxima do centro
-        if dist_to_center > self.threshold_distance:
+        # Atualiza flag latch
+        if not self.returning_to_center and dist_to_center > self.threshold_distance:
+            self.returning_to_center = True
+            logger.info("Habilitado retorno ao centro")
+        elif self.returning_to_center and dist_to_center < self.reset_distance:
+            self.returning_to_center = False
+            logger.info("Desabilitado retorno ao centro")
+
+        # Escolhe perpendicular
+        if self.returning_to_center:
+            # Escolhe direção que aproxima do centro
             perp1_dist = self._dist(
                 (player[0] + perp1[0], player[1] + perp1[1]), self.initial_player_pos
             )
