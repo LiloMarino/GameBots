@@ -1,0 +1,327 @@
+{
+    "boxes": [
+        {
+            "id": "1",
+            "label": "Bullet",
+            "x": "792.66",
+            "y": "422.34",
+            "width": "25.99",
+            "height": "19.67",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9999990463256836
+        },
+        {
+            "id": "2",
+            "label": "Bullet",
+            "x": "804.84",
+            "y": "234.49",
+            "width": "26.89",
+            "height": "20.93",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.993444561958313
+        },
+        {
+            "id": "3",
+            "label": "Bullet",
+            "x": "438.98",
+            "y": "370.55",
+            "width": "27.52",
+            "height": "17.65",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.988750159740448
+        },
+        {
+            "id": "4",
+            "label": "Bullet",
+            "x": "808.13",
+            "y": "327.19",
+            "width": "31.26",
+            "height": "16.08",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9880455136299133
+        },
+        {
+            "id": "5",
+            "label": "Bullet",
+            "x": "443.44",
+            "y": "275.16",
+            "width": "28.49",
+            "height": "18.08",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9877209663391113
+        },
+        {
+            "id": "6",
+            "label": "Bullet",
+            "x": "479.30",
+            "y": "455.39",
+            "width": "23.86",
+            "height": "21.75",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9875478148460388
+        },
+        {
+            "id": "7",
+            "label": "Bullet",
+            "x": "554.06",
+            "y": "511.88",
+            "width": "18.08",
+            "height": "26.28",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9846513271331787
+        },
+        {
+            "id": "8",
+            "label": "Bullet",
+            "x": "746.72",
+            "y": "166.05",
+            "width": "21.18",
+            "height": "25.99",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9832489490509033
+        },
+        {
+            "id": "9",
+            "label": "Bullet",
+            "x": "645.94",
+            "y": "526.41",
+            "width": "15.54",
+            "height": "28.29",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9820330142974854
+        },
+        {
+            "id": "A",
+            "label": "Bullet",
+            "x": "568.13",
+            "y": "141.80",
+            "width": "18.65",
+            "height": "29.17",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9780879020690918
+        },
+        {
+            "id": "B",
+            "label": "Bullet",
+            "x": "661.41",
+            "y": "133.01",
+            "width": "16.79",
+            "height": "30.91",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.976699948310852
+        },
+        {
+            "id": "C",
+            "label": "Bullet",
+            "x": "490.78",
+            "y": "193.01",
+            "width": "25.99",
+            "height": "24.62",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9718019962310791
+        },
+        {
+            "id": "D",
+            "label": "Bullet",
+            "x": "656.25",
+            "y": "419.53",
+            "width": "37.15",
+            "height": "37.65",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.920954704284668
+        },
+        {
+            "id": "E",
+            "label": "Bullet",
+            "x": "707.81",
+            "y": "514.22",
+            "width": "38.53",
+            "height": "37.50",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9204880595207214
+        },
+        {
+            "id": "F",
+            "label": "Bullet",
+            "x": "662.34",
+            "y": "640.78",
+            "width": "39.49",
+            "height": "39.64",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9186103940010071
+        },
+        {
+            "id": "G",
+            "label": "Bullet",
+            "x": "752.34",
+            "y": "727.97",
+            "width": "40.78",
+            "height": "42.80",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.9048752784729004
+        },
+        {
+            "id": "H",
+            "label": "Enemy",
+            "x": "683.67",
+            "y": "227.07",
+            "width": "90.97",
+            "height": "87.44",
+            "labeledByModel": null,
+            "confidence": 1
+        },
+        {
+            "id": "I",
+            "label": "Enemy",
+            "x": "490.31",
+            "y": "212.46",
+            "width": "77.29",
+            "height": "86.78",
+            "labeledByModel": "RFBoxPrompt/v1",
+            "confidence": 0.992544412612915
+        },
+        {
+            "id": "J",
+            "label": "Enemy",
+            "x": "643.83",
+            "y": "321.21",
+            "width": "112.83",
+            "height": "110.71",
+            "labeledByModel": null,
+            "confidence": 1
+        },
+        {
+            "id": "K",
+            "label": "Bullet",
+            "x": "606.81",
+            "y": "319.80",
+            "width": "37.37",
+            "height": "37.37",
+            "labeledByModel": null,
+            "confidence": 1
+        },
+        {
+            "id": "L",
+            "label": "Bullet",
+            "x": "732.33",
+            "y": "493.98",
+            "width": "21.86",
+            "height": "27.50",
+            "labeledByModel": null,
+            "confidence": 1
+        },
+        {
+            "id": "M",
+            "label": "Player",
+            "x": "705.10",
+            "y": "875.72",
+            "width": "75.28",
+            "height": "109.40",
+            "labeledByModel": null,
+            "confidence": 1
+        },
+        {
+            "id": "N",
+            "label": "Power",
+            "x": "955.82",
+            "y": "411.57",
+            "width": "26.28",
+            "height": "27.98",
+            "labeledByModel": null,
+            "confidence": 1
+        },
+        {
+            "id": "O",
+            "label": "Power",
+            "x": "912.09",
+            "y": "531.24",
+            "width": "25.74",
+            "height": "27.66",
+            "confidence": null
+        },
+        {
+            "id": "P",
+            "label": "Score",
+            "x": "954.54",
+            "y": "611.13",
+            "width": "25.35",
+            "height": "26.12",
+            "confidence": null
+        },
+        {
+            "id": "Q",
+            "label": "Score",
+            "x": "481.11",
+            "y": "696.60",
+            "width": "27.27",
+            "height": "27.27",
+            "confidence": null
+        },
+        {
+            "id": "R",
+            "label": "Score",
+            "x": "996.60",
+            "y": "844.29",
+            "width": "26.50",
+            "height": "27.66",
+            "confidence": null
+        },
+        {
+            "id": "S",
+            "label": "Score",
+            "x": "772.85",
+            "y": "149.61",
+            "width": "26.12",
+            "height": "27.27",
+            "confidence": null
+        },
+        {
+            "id": "T",
+            "label": "Score",
+            "x": "713.50",
+            "y": "159.22",
+            "width": "27.27",
+            "height": "26.50",
+            "confidence": null
+        },
+        {
+            "id": "U",
+            "label": "Score",
+            "x": "737.89",
+            "y": "54.74",
+            "width": "26.12",
+            "height": "27.27",
+            "confidence": null
+        },
+        {
+            "id": "V",
+            "label": "Score",
+            "x": "671.69",
+            "y": "438.07",
+            "width": "28.05",
+            "height": "27.31",
+            "confidence": null
+        },
+        {
+            "id": "W",
+            "label": "Score",
+            "x": "938.44",
+            "y": "41.76",
+            "width": "27.21",
+            "height": "15.02",
+            "confidence": null
+        },
+        {
+            "id": "Z",
+            "label": "Value",
+            "x": "805.12",
+            "y": "104.70",
+            "width": "37.89",
+            "height": "46.19",
+            "confidence": null
+        }
+    ],
+    "height": 1080,
+    "key": "frame_0037.jpg",
+    "width": 1920
+}
