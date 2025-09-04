@@ -73,7 +73,7 @@ class Think:
 
         # Salva posição inicial na primeira chamada
         if self.initial_player_pos is None:
-            self.initial_player_pos = (player[0], player[1] - 50)
+            self.initial_player_pos = (player[0], player[1])
             logger.info("Posição inicial: %s", self.initial_player_pos)
 
         # ==============================

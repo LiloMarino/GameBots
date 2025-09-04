@@ -1,7 +1,9 @@
 import threading
 import time
 
+import cv2
 import keyboard
+from core import debug
 from core.act import Act
 from core.sensor import Difficulty, Sensor
 from core.think import DodgeStrategy, Think
@@ -95,6 +97,8 @@ class Bot:
                     self.act.continuous_fire(True)
 
             vector = self.think.think(screenshot, detections)
+            cv2.imshow("YOLO Debug", debug.debug_img)
+            cv2.waitKey(1)
             self.act.desvia(vector)
 
     def is_active(self):

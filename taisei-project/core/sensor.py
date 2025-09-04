@@ -34,7 +34,7 @@ class Detections(NamedTuple):
 
 class Sensor:
     TEMPLATES_DIR = Path("templates")
-    MODEL_PATH = "runs/detect/train/weights/best.pt"
+    MODEL_PATH = "../runs/detect/train/weights/best.pt"
 
     def __init__(
         self,
@@ -177,10 +177,12 @@ class Sensor:
 
         # Janela em tempo real
         debug_img = cv2.resize(debug_img, (0, 0), fx=self.scale, fy=self.scale)
-        cv2.imshow("YOLO Debug", debug_img)
-        cv2.waitKey(1)
+        debug.debug_img = debug_img
 
-        return screenshot, Detections(bullets=bullets, enemies=enemies, players=players)
+        return (
+            screenshot,
+            Detections(bullets=bullets, enemies=enemies, players=players),
+        )
 
     def __del__(self):
         self.sct.close()
