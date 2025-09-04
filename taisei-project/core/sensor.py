@@ -136,7 +136,7 @@ class Sensor:
         else:
             return None
 
-    def get_objects(self) -> Detections:
+    def get_objects(self) -> tuple[np.ndarray, Detections]:
         """
         Executa o YOLO na captura da tela e retorna listas separadas
         de bounding boxes para cada classe.
@@ -180,7 +180,7 @@ class Sensor:
         cv2.imshow("YOLO Debug", debug_img)
         cv2.waitKey(1)
 
-        return Detections(bullets=bullets, enemies=enemies, players=players)
+        return screenshot, Detections(bullets=bullets, enemies=enemies, players=players)
 
     def __del__(self):
         self.sct.close()

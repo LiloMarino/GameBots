@@ -63,7 +63,7 @@ class Bot:
         # Espera o jogo iniciar
         time.sleep(2)
 
-    def run(self):
+    def run(self, use_bombs=False):
         while not self.bot_ativo:
             time.sleep(1)
 
@@ -75,7 +75,7 @@ class Bot:
                 self.act.continuous_fire(False)
                 time.sleep(1)
 
-            detections = self.sensor.get_objects()
+            screenshot, detections = self.sensor.get_objects()
             if not detections.players:
                 player_not_detected += 1
                 logger.info(f"Jogador nao detectado ({player_not_detected})")
@@ -85,15 +85,16 @@ class Bot:
                 player_not_detected = 0
                 self.act.continuous_fire(True)
 
-            # if self.think.is_player_in_danger(detections):
-            #     # Usa o bomb para preservar a sobrevivência
-            #     self.act.continuous_fire(False)
-            #     self.act.bomb()
-            #     self.bombs_used += 1
-            #     logger.info(f"Usou bomba ({self.bombs_used})")
-            #     self.act.continuous_fire(True)
+            if use_bombs:
+                if self.think.is_player_in_danger(detections):
+                    # Usa o bomb para preservar a sobrevivência
+                    self.act.continuous_fire(False)
+                    self.act.bomb()
+                    self.bombs_used += 1
+                    logger.info(f"Usou bomba ({self.bombs_used})")
+                    self.act.continuous_fire(True)
 
-            vector = self.think.think(detections)
+            vector = self.think.think(screenshot, detections)
             self.act.desvia(vector)
 
     def is_active(self):
