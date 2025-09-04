@@ -3,7 +3,9 @@ import random
 from enum import Enum, auto
 from typing import Tuple
 
+import cv2
 import numpy as np
+from core import debug
 from core.sensor import BoundingBox, Detections
 from logger_config import logger
 
@@ -85,6 +87,7 @@ class Think:
             for t in detections.bullets + detections.enemies
             if self._dist(player, _bbox_center(t)) <= radius
         ]
+        cv2.circle(debug.debug_img, player, radius, (0, 0, 255), 2)
 
         # ==============================
         # 2) Caso existam threats

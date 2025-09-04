@@ -97,8 +97,7 @@ class Bot:
                     self.act.continuous_fire(True)
 
             vector = self.think.think(screenshot, detections)
-            cv2.imshow("YOLO Debug", debug.debug_img)
-            cv2.waitKey(1)
+            debug.debug_show()
             self.act.desvia(vector)
 
     def is_active(self):

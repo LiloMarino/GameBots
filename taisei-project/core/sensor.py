@@ -47,11 +47,8 @@ class Sensor:
         self.model = YOLO(self.MODEL_PATH)
         self._frame_counter = itertools.count(1)
         self._last_player_frame = None
-        self.scale = 0.5
-        cv2.imshow(
-            "YOLO Debug",
-            cv2.resize(self.get_screenshot(), (0, 0), fx=self.scale, fy=self.scale),
-        )
+        debug.debug_img = self.get_screenshot()
+        debug.debug_show()
         logger.info("Janela aberta. Posicione no segundo monitor.")
         cv2.waitKey(1)
 
@@ -176,7 +173,6 @@ class Sensor:
         # debug.save_image(debug_img, f"frame_{frame_idx:03d}")
 
         # Janela em tempo real
-        debug_img = cv2.resize(debug_img, (0, 0), fx=self.scale, fy=self.scale)
         debug.debug_img = debug_img
 
         return (
