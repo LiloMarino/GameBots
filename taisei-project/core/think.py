@@ -20,7 +20,35 @@ def _bbox_center(bbox: BoundingBox) -> Tuple[int, int]:
     return ((bbox.x1 + bbox.x2) // 2, (bbox.y1 + bbox.y2) // 2)
 
 
+def draw_arrow(
+    start: Tuple[int, int],
+    direction: Tuple[int, int],
+    color: Tuple[int, int, int] = (0, 255, 0),
+    scale: int = 50,
+) -> None:
+    """
+    Desenha uma seta em uma imagem a partir de um ponto inicial na direção de um vetor.
+
+    Args:
+        img: Imagem onde a seta será desenhada.
+        start: Coordenada inicial (x, y).
+        direction: Vetor de direção (dx, dy).
+        color: Cor da seta em BGR (padrão: verde).
+        scale: Escala/tamanho da seta (padrão: 50).
+    """
+    dx, dy = direction
+    # Normaliza o vetor para comprimento 1
+    norm = np.hypot(dx, dy)
+    if norm == 0:
+        return  # direção nula, não desenha nada
+    dx, dy = dx / norm, dy / norm
+
+    end_point = (int(start[0] + dx * scale), int(start[1] + dy * scale))
+    cv2.arrowedLine(debug.debug_img, start, end_point, color, 2, tipLength=0.3)
+
+
 class Think:
+
     def __init__(
         self,
         region: dict[str, int],
@@ -96,6 +124,10 @@ class Think:
             # Threat mais próxima
             closest = min(threats, key=lambda b: self._dist(player, _bbox_center(b)))
             cx, cy = _bbox_center(closest)
+
+            # Linha player -> projétil
+            cv2.line(debug.debug_img, player, (cx, cy), (255, 0, 0), 2)
+
             vx, vy = player[0] - cx, player[1] - cy
 
             # Duas perpendiculares possíveis
@@ -129,6 +161,9 @@ class Think:
                 )
                 perp = perp1 if dist1 < dist2 else perp2
 
+            # Desenha seta na direção escolhida
+            draw_arrow(player, perp)
+
             return perp
 
         # ==============================
@@ -139,6 +174,8 @@ class Think:
             enemies_center_x = [_bbox_center(e)[0] for e in detections.enemies]
             closest_enemy_x = min(enemies_center_x, key=lambda ex: abs(player[0] - ex))
             move_x = closest_enemy_x - player[0]
+
+            draw_arrow(player, (move_x, 0))
             return (move_x, 0)
 
         # ==============================
@@ -146,6 +183,7 @@ class Think:
         # ==============================
         move_x = self.initial_player_pos[0] - player[0]
         move_y = self.initial_player_pos[1] - player[1]
+        draw_arrow(player, (move_x, move_y))
         return (move_x, move_y)
 
     def _dodge_quadrante(
