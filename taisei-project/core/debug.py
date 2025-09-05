@@ -2,6 +2,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from logger_config import logger
 
 DEBUG_DIR = Path("debug")
 DEBUG_DIR.mkdir(parents=True, exist_ok=True)
@@ -19,6 +20,7 @@ def debug_show():
         cv2.resize(debug_img, (0, 0), fx=SCALE, fy=SCALE),
     )
     if frame_count % 20 == 0:
+        logger.info(f"Salvando imagem {frame_count}")
         save_image(debug_img, f"debug_{frame_count}")
     cv2.waitKey(1)
 

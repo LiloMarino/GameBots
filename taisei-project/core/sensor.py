@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import itertools
+from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 from typing import NamedTuple
@@ -19,11 +22,34 @@ class Difficulty(Enum):
     LUNATIC = auto()
 
 
-class BoundingBox(NamedTuple):
+@dataclass(frozen=True)
+class BoundingBox:
     x1: int
     y1: int
     x2: int
     y2: int
+
+    def center(self) -> tuple[int, int]:
+        """Retorna o centro (cx, cy) da bounding box."""
+        return ((self.x1 + self.x2) // 2, (self.y1 + self.y2) // 2)
+
+    def intersects(self, other: BoundingBox) -> bool:
+        """Verifica se duas bounding boxes se intersectam."""
+        return not (
+            self.x2 <= other.x1  # completamente à esquerda
+            or self.x1 >= other.x2  # completamente à direita
+            or self.y2 <= other.y1  # completamente acima
+            or self.y1 >= other.y2  # completamente abaixo
+        )
+
+    def contains(self, x: int, y: int) -> bool:
+        """Verifica se um ponto (x, y) está dentro da bounding box."""
+        return self.x1 <= x < self.x2 and self.y1 <= y < self.y2
+
+    @classmethod
+    def from_center(cls, cx: int, cy: int, w: int, h: int) -> BoundingBox:
+        """Cria uma bounding box a partir do centro e dimensões (w, h)."""
+        return cls(cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2)
 
 
 class Detections(NamedTuple):

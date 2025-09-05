@@ -61,7 +61,7 @@ class Think:
 
         player = detections.players[0]
         for bullet in detections.bullets:
-            if self._intersect(player, bullet):
+            if player.intersects(bullet):
                 return True
 
         return False
@@ -75,7 +75,7 @@ class Think:
         if not detections.players:
             return (0, 0)
 
-        player = self._bbox_center(detections.players[0])
+        player = detections.players[0].center()
 
         # Salva posição inicial na primeira chamada
         if self.initial_player_pos is None:
@@ -88,7 +88,7 @@ class Think:
         threats = [
             t
             for t in detections.bullets + detections.enemies
-            if self._dist(player, self._bbox_center(t)) <= self.radius
+            if self._dist(player, t.center()) <= self.radius
         ]
         cv2.circle(debug.debug_img, player, self.radius, (0, 0, 255), 2)
 
@@ -97,10 +97,8 @@ class Think:
         # ==============================
         if threats:
             # Threat mais próxima
-            closest = min(
-                threats, key=lambda b: self._dist(player, self._bbox_center(b))
-            )
-            cx, cy = self._bbox_center(closest)
+            closest = min(threats, key=lambda b: self._dist(player, b.center()))
+            cx, cy = closest.center()
 
             # Linha player -> projétil
             cv2.line(debug.debug_img, player, (cx, cy), (255, 0, 0), 2)
@@ -113,7 +111,7 @@ class Think:
 
             # Caso existam inimigos na tela, escolher a perpendicular que aproxima de um inimigo
             if detections.enemies:
-                enemies_center_x = [self._bbox_center(e)[0] for e in detections.enemies]
+                enemies_center_x = [e.center()[0] for e in detections.enemies]
 
                 # Avaliar para onde cada perpendicular leva
                 def dist_to_nearest_enemy(pos):
@@ -148,7 +146,7 @@ class Think:
         # ==============================
         if detections.enemies:
             # Vai para debaixo do inimigo mais próximo
-            enemies_center_x = [self._bbox_center(e)[0] for e in detections.enemies]
+            enemies_center_x = [e.center()[0] for e in detections.enemies]
             closest_enemy_x = min(enemies_center_x, key=lambda ex: abs(player[0] - ex))
             move_x = closest_enemy_x - player[0]
 
@@ -169,29 +167,34 @@ class Think:
         if not detections.players:
             return (0, 0)
 
-        player = self._bbox_center(detections.players[0])
+        # Posição atual do player
+        player_bbox = detections.players[0]
+        px, py = player_bbox.center()
 
         # Salva posição inicial na primeira chamada
         if self.initial_player_pos is None:
-            self.initial_player_pos = (player[0], player[1])
+            self.initial_player_pos = (px, py)
             logger.info("Posição inicial: %s", self.initial_player_pos)
 
         # ==============================
-        # 1) Definir a grid 3x3
+        # 1) Definir a grid 3x3 (centrada no player)
         # ==============================
-        px, py = player
         cs = self.cell_size
+        offsets = {
+            1: (-cs, -cs),
+            2: (0, -cs),
+            3: (cs, -cs),
+            4: (-cs, 0),
+            5: (0, 0),  # Player
+            6: (cs, 0),
+            7: (-cs, cs),
+            8: (0, cs),
+            9: (cs, cs),
+        }
 
         regions: dict[int, Region] = {
-            1: Region(BoundingBox(px - cs, py - cs, px, py)),
-            2: Region(BoundingBox(px, py - cs, px + cs, py)),
-            3: Region(BoundingBox(px + cs, py - cs, px + 2 * cs, py)),
-            4: Region(BoundingBox(px - cs, py, px, py + cs)),
-            5: Region(BoundingBox(px, py, px + cs, py + cs)),  # Player
-            6: Region(BoundingBox(px + cs, py, px + 2 * cs, py + cs)),
-            7: Region(BoundingBox(px - cs, py + cs, px, py + 2 * cs)),
-            8: Region(BoundingBox(px, py + cs, px + cs, py + 2 * cs)),
-            9: Region(BoundingBox(px + cs, py + cs, px + 2 * cs, py + 2 * cs)),
+            i: Region(BoundingBox.from_center(px + dx, py + dy, cs, cs))
+            for i, (dx, dy) in offsets.items()
         }
 
         # Desenhar grid
@@ -208,58 +211,60 @@ class Think:
         # 2) Contar projéteis em cada região
         # ==============================
         for b in detections.bullets:
-            cx, cy = self._bbox_center(b)
             for idx, region in regions.items():
-                if (
-                    region.bbox.x1 <= cx < region.bbox.x2
-                    and region.bbox.y1 <= cy < region.bbox.y2
-                ):
+                if region.bbox.intersects(b):
                     regions[idx].count += 1
+
+        for idx, region in regions.items():
+            logger.info("Regiao %d: %d projeteis", idx, region.count)
 
         # ==============================
         # 3) Escolher regiões com menor quantidade
         # ==============================
         min_count = min(r.count for r in regions.values())
         best_regions = [idx for idx, r in regions.items() if r.count == min_count]
+        logger.info("Melhores regioes: %s", best_regions)
 
         # ==============================
         # 4) Critério de desempate
         # ==============================
         if detections.enemies:
-            enemies_center_x = [self._bbox_center(e)[0] for e in detections.enemies]
+            enemies_center_x = [e.center()[0] for e in detections.enemies]
 
             def dist_to_nearest_enemy(region_idx: int):
-                region = regions[region_idx]
-                cx, cy = self._bbox_center(region.bbox)
+                cx, _ = regions[region_idx].bbox.center()
                 return min(abs(cx - ex) for ex in enemies_center_x)
 
+            logger.info("Aproximando-se do inimigo...")
             chosen = min(best_regions, key=dist_to_nearest_enemy)
         else:
             # Escolhe a região cujo centro aproxima mais da posição inicial
             def dist_to_initial(region_idx: int):
-                region = regions[region_idx]
-                cx, cy = self._bbox_center(region.bbox)
-                return self._dist((cx, cy), self.initial_player_pos)
+                return self._dist(
+                    regions[region_idx].bbox.center(),
+                    self.initial_player_pos,
+                )
 
+            logger.info("Retornando ao ponto inicial...")
             chosen = min(best_regions, key=dist_to_initial)
 
         # ==============================
         # 5) Converter região escolhida em vetor de movimento
         # ==============================
-        region = regions[chosen]
-        region_center = self._bbox_center(region.bbox)
+        region_center = regions[chosen].bbox.center()
         move_x = region_center[0] - px
         move_y = region_center[1] - py
 
         # Debug visual
+        r = regions[chosen]
         cv2.rectangle(
             debug.debug_img,
-            (region.bbox.x1, region.bbox.y1),
-            (region.bbox.x2, region.bbox.y2),
+            (r.bbox.x1, r.bbox.y1),
+            (r.bbox.x2, r.bbox.y2),
             (0, 255, 255),
             2,
         )
-        debug.draw_arrow(player, (move_x, move_y), (0, 255, 0))
+        debug.draw_arrow((px, py), (move_x, move_y), color=(0, 255, 0))
 
         return (move_x, move_y)
 
@@ -272,17 +277,5 @@ class Think:
     # Utils
     # ============================================================
     @staticmethod
-    def _bbox_center(bbox: BoundingBox) -> Tuple[int, int]:
-        """Retorna o centro (x, y) de uma bounding box."""
-        return ((bbox.x1 + bbox.x2) // 2, (bbox.y1 + bbox.y2) // 2)
-
-    @staticmethod
     def _dist(a: Tuple[float, float], b: Tuple[float, float]) -> float:
         return math.hypot(a[0] - b[0], a[1] - b[1])
-
-    @staticmethod
-    def _intersect(a: BoundingBox, b: BoundingBox) -> bool:
-        """
-        Verifica se duas bounding boxes se intersectam.
-        """
-        return not (a.x2 < b.x1 or a.x1 > b.x2 or a.y2 < b.y1 or a.y1 > b.y2)
