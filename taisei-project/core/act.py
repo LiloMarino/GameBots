@@ -26,23 +26,23 @@ class Act:
         if angle < 0:
             angle += 360
 
-        # Define a região (cada 45°)
+        # Define a região (cada 45°) lembrando que o eixo y cresce para baixo
         if 337.5 <= angle or angle < 22.5:
             keys = [Key.right]  # E
         elif 22.5 <= angle < 67.5:
-            keys = [Key.up, Key.right]  # NE
+            keys = [Key.down, Key.right]  # SE
         elif 67.5 <= angle < 112.5:
-            keys = [Key.up]  # N
+            keys = [Key.down]  # S
         elif 112.5 <= angle < 157.5:
-            keys = [Key.up, Key.left]  # NW
+            keys = [Key.down, Key.left]  # SW
         elif 157.5 <= angle < 202.5:
             keys = [Key.left]  # W
         elif 202.5 <= angle < 247.5:
-            keys = [Key.down, Key.left]  # SW
+            keys = [Key.up, Key.left]  # NW
         elif 247.5 <= angle < 292.5:
-            keys = [Key.down]  # S
+            keys = [Key.up]  # N
         elif 292.5 <= angle < 337.5:
-            keys = [Key.down, Key.right]  # SE
+            keys = [Key.up, Key.right]  # NE
 
         # Pressiona as teclas correspondentes
         logger.info(f"Desvia ({dx}, {dy}) ângulo={angle:.1f}° -> {keys}")

@@ -31,7 +31,7 @@ def save_image(image: cv2.typing.MatLike, name: str):
 def draw_arrow(
     start: tuple[int, int],
     direction: tuple[int, int],
-    img: np.ndarray = debug_img,
+    img: np.ndarray | None = None,
     color: tuple[int, int, int] = (0, 255, 0),
     scale: int = 50,
 ) -> None:
@@ -51,6 +51,7 @@ def draw_arrow(
     if norm == 0:
         return  # direção nula, não desenha nada
     dx, dy = dx / norm, dy / norm
-
     end_point = (int(start[0] + dx * scale), int(start[1] + dy * scale))
+    if img is None:
+        img = debug_img
     cv2.arrowedLine(img, start, end_point, color, 2, tipLength=0.3)
