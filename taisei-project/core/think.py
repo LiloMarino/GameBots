@@ -45,7 +45,9 @@ class Think:
             DodgeStrategy.MIX_DISTANCIA_DENSIDADE: self._dodge_mix_distancia_densidade,
         }.get(dodge_strategy, self._dodge_menor_distancia)
 
-    def think(self, screenshot: np.ndarray, detections: Detections) -> Tuple[int, int]:
+    def think(
+        self, screenshot: np.ndarray, detections: Detections
+    ) -> Tuple[Tuple[int, int], float]:
         """
         Decide o vetor de destino baseado na estratégia de desvio configurada.
         Retorna (dx, dy) relativo ao player.
@@ -71,9 +73,9 @@ class Think:
     # ============================================================
     def _dodge_menor_distancia(
         self, screenshot: np.ndarray, detections: Detections
-    ) -> Tuple[int, int]:
+    ) -> Tuple[Tuple[int, int], float]:
         if not detections.players:
-            return (0, 0)
+            return (0, 0), 0
 
         player = detections.players[0].center()
 
@@ -139,7 +141,7 @@ class Think:
             # Desenha seta na direção escolhida
             debug.draw_arrow(player, perp)
 
-            return perp
+            return perp, 0.05
 
         # ==============================
         # 3) Caso não haja threats próximas
@@ -151,7 +153,7 @@ class Think:
             move_x = closest_enemy_x - player[0]
 
             debug.draw_arrow(player, (move_x, 0))
-            return (move_x, 0)
+            return (move_x, 0), 0.05
 
         # ==============================
         # 4) Caso não haja threats nem inimigos
@@ -159,13 +161,13 @@ class Think:
         move_x = self.initial_player_pos[0] - player[0]
         move_y = self.initial_player_pos[1] - player[1]
         debug.draw_arrow(player, (move_x, move_y))
-        return (move_x, move_y)
+        return (move_x, move_y), 0.05
 
     def _dodge_menor_densidade(
         self, screenshot: np.ndarray, detections: Detections
-    ) -> Tuple[int, int]:
+    ) -> Tuple[Tuple[int, int], float]:
         if not detections.players:
-            return (0, 0)
+            return (0, 0), 0
 
         # Posição atual do player
         player_bbox = detections.players[0]
@@ -222,31 +224,28 @@ class Think:
         # 3) Escolher regiões com menor quantidade
         # ==============================
         min_count = min(r.count for r in regions.values())
-        best_regions = [idx for idx, r in regions.items() if r.count == min_count]
+        best_regions = [
+            idx for idx, r in regions.items() if r.count == min_count and idx != 5
+        ]
         logger.info("Melhores regioes: %s", best_regions)
 
         # ==============================
         # 4) Critério de desempate
         # ==============================
-        if detections.enemies:
-            enemies_center_x = [e.center()[0] for e in detections.enemies]
+        alpha = 0.5  # peso da distância à posição inicial
+        enemies_center_x = [e.center()[0] for e in detections.enemies]
 
-            def dist_to_nearest_enemy(region_idx: int):
-                cx, _ = regions[region_idx].bbox.center()
-                return min(abs(cx - ex) for ex in enemies_center_x)
+        def combined_score(region_idx: int):
+            region_cx, region_cy = regions[region_idx].bbox.center()
+            dist_enemy = (
+                min(abs(region_cx - ex) for ex in enemies_center_x)
+                if enemies_center_x
+                else 0
+            )
+            dist_initial = self._dist((region_cx, region_cy), self.initial_player_pos)
+            return dist_enemy + alpha * dist_initial
 
-            logger.info("Aproximando-se do inimigo...")
-            chosen = min(best_regions, key=dist_to_nearest_enemy)
-        else:
-            # Escolhe a região cujo centro aproxima mais da posição inicial
-            def dist_to_initial(region_idx: int):
-                return self._dist(
-                    regions[region_idx].bbox.center(),
-                    self.initial_player_pos,
-                )
-
-            logger.info("Retornando ao ponto inicial...")
-            chosen = min(best_regions, key=dist_to_initial)
+        chosen = min(best_regions, key=combined_score)
 
         logger.info("Regiao escolhida: %d", chosen)
         # ==============================
@@ -267,12 +266,12 @@ class Think:
         )
         debug.draw_arrow((px, py), (move_x, move_y), color=(0, 255, 0))
 
-        return (move_x, move_y)
+        return (move_x, move_y), 0.15
 
     def _dodge_mix_distancia_densidade(
         self, screenshot: np.ndarray, detections: Detections
-    ) -> Tuple[int, int]:
-        return (0, 0)
+    ) -> Tuple[Tuple[int, int], float]:
+        return (0, 0), 0
 
     # ============================================================
     # Utils

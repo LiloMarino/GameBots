@@ -96,9 +96,9 @@ class Bot:
                     logger.info(f"Usou bomba ({self.bombs_used})")
                     self.act.continuous_fire(True)
 
-            vector = self.think.think(screenshot, detections)
+            vector, step = self.think.think(screenshot, detections)
             debug.debug_show()
-            self.act.desvia(vector)
+            self.act.desvia(vector, step)
 
     def is_active(self):
         return self.bot_ativo

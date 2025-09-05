@@ -7,11 +7,10 @@ from pynput.keyboard import Controller, Key
 
 
 class Act:
-    def __init__(self, step_time: float = 0.05):
+    def __init__(self):
         self.kb = Controller()
-        self.step_time = step_time
 
-    def desvia(self, vetor: Tuple[int, int]):
+    def desvia(self, vetor: Tuple[int, int], step_time: float = 0.05):
         """
         Converte um vetor (dx, dy) em movimento e executa a jogada.
         Suporta 8 direções: N, NE, E, SE, S, SW, W, NW.
@@ -48,7 +47,7 @@ class Act:
         logger.info(f"Desvia ({dx}, {dy}) ângulo={angle:.1f}° -> {keys}")
         for k in keys:
             self.kb.press(k)
-        time.sleep(self.step_time)
+        time.sleep(step_time)
         for k in keys:
             self.kb.release(k)
 
