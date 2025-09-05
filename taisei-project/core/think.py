@@ -248,6 +248,7 @@ class Think:
             logger.info("Retornando ao ponto inicial...")
             chosen = min(best_regions, key=dist_to_initial)
 
+        logger.info("Regiao escolhida: %d", chosen)
         # ==============================
         # 5) Converter região escolhida em vetor de movimento
         # ==============================
