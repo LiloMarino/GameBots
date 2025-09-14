@@ -308,7 +308,117 @@ class Think:
     def _dodge_mix_distancia_densidade(
         self, screenshot: np.ndarray, detections: Detections
     ) -> Tuple[Tuple[int, int], float]:
-        return (0, 0), 0
+        if not detections.players:
+            return (0, 0), 0
+
+        # ------------------------------
+        # Posição atual do player
+        # ------------------------------
+        player_bbox = detections.players[0]
+        px, py = player_bbox.center()
+        player = (px, py)
+
+        if self.initial_player_pos is None:
+            self.initial_player_pos = (px, py)
+            logger.info("Posição inicial: %s", self.initial_player_pos)
+
+        # ------------------------------
+        # 1) Ameaça imediata?
+        # ------------------------------
+        critical_radius = (self.cell_size * math.sqrt(2)) / 2
+        threats = [
+            t
+            for t in detections.bullets
+            if self._dist(player, t.center()) <= critical_radius
+        ]
+        if threats:
+            # Threat mais próxima
+            closest = min(threats, key=lambda b: self._dist(player, b.center()))
+            cx, cy = closest.center()
+
+            # Vetor player->projétil
+            vx, vy = player[0] - cx, player[1] - cy
+
+            # Perpendiculares
+            perp1 = (-vy, vx)
+            perp2 = (vy, -vx)
+
+            # Agora usamos densidade para escolher a melhor perpendicular
+            _, densidade_vec1 = self._score_perpendicular(perp1, player, detections)
+            _, densidade_vec2 = self._score_perpendicular(perp2, player, detections)
+
+            chosen = perp1 if densidade_vec1 > densidade_vec2 else perp2
+
+            logger.info(
+                "MixStrategy: Threat próxima detectada! Usando menor distância + densidade"
+            )
+            debug.draw_arrow(player, chosen, color=(0, 0, 255))
+            return chosen, 0.05
+
+        # ------------------------------
+        # 2) Caso contrário, usar menor densidade normal
+        # ------------------------------
+        logger.info("MixStrategy: Sem ameaça imediata, usando menor densidade")
+        return self._dodge_menor_densidade(screenshot, detections)
+
+    # ============================================================
+    # Função auxiliar para avaliar perpendicular com base na densidade
+    # ============================================================
+    def _score_perpendicular(
+        self, perp: Tuple[int, int], player: Tuple[int, int], detections: Detections
+    ) -> Tuple[int, float]:
+        """
+        Retorna (regiao_idx, score) da região para onde a perpendicular aponta,
+        baseado no cálculo de densidade.
+        """
+        # Estimar posição alvo da perpendicular
+        target_pos = (player[0] + perp[0], player[1] + perp[1])
+
+        # Definir grid
+        cs = self.cell_size
+        regions: dict[int, Region] = {
+            i: Region(BoundingBox.from_center(player[0] + dx, player[1] + dy, cs, cs))
+            for i, (dx, dy) in {
+                1: (-cs, -cs),
+                2: (0, -cs),
+                3: (cs, -cs),
+                4: (-cs, 0),
+                5: (0, 0),
+                6: (cs, 0),
+                7: (-cs, cs),
+                8: (0, cs),
+                9: (cs, cs),
+            }.items()
+        }
+
+        # Contar projéteis em cada região
+        for b in detections.bullets:
+            for idx, region in regions.items():
+                if region.bbox.intersects(b):
+                    regions[idx].count += 1
+
+        # Calcular danger_score simples
+        vizinhos = {
+            1: [2, 4, 5],
+            2: [1, 3, 5],
+            3: [2, 6, 5],
+            4: [1, 5, 7],
+            5: [2, 4, 6, 8],
+            6: [3, 5, 9],
+            7: [4, 8, 5],
+            8: [5, 7, 9],
+            9: [6, 8, 5],
+        }
+        for idx, region in regions.items():
+            neighbor_count = sum(regions[n].count for n in vizinhos[idx])
+            region.danger_score = region.count + 0.5 * neighbor_count
+
+        # Escolher a região que contém a perpendicular
+        for idx, region in regions.items():
+            if region.bbox.contains(*target_pos):
+                return idx, -region.danger_score  # quanto menor o danger, melhor
+
+        return 5, -regions[5].danger_score
 
     # ============================================================
     # Utils
