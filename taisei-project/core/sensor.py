@@ -71,8 +71,6 @@ class Sensor:
         self.difficulty = difficulty
         self.sct = mss.mss()
         self.model = YOLO(self.MODEL_PATH)
-        self._frame_counter = itertools.count(1)
-        self._last_player_frame = None
         debug.debug_img = self.get_screenshot()
         debug.debug_show()
         logger.info("Janela aberta. Posicione no segundo monitor.")
@@ -185,20 +183,34 @@ class Sensor:
             elif cls_id == 2:  # Player
                 players.append(bbox)
 
-        debug_img = results[0].plot()  # Renderiza boxes + confidence
+        # ==============================
+        # Debug image (somente BBoxes)
+        # ==============================
+        debug_img = screenshot.copy()
 
-        # Salva frame caso o player tenha morrido
-        if players:
-            self._last_player_frame = debug_img.copy()
-        elif self._last_player_frame is not None:
-            debug_img = self._last_player_frame
-            frame_idx = next(self._frame_counter)
-            # debug.save_image(debug_img, f"lost_player_{frame_idx:03d}")
+        # Configurações
+        colors = {
+            "bullet": (0, 165, 255),  # laranja
+            "enemy": (0, 0, 255),  # vermelho
+            "player": (255, 0, 0),  # azul
+        }
+        thickness = 2
 
-        # frame_idx = next(self._frame_counter)
-        # debug.save_image(debug_img, f"frame_{frame_idx:03d}")
+        # Desenha manualmente
+        for b in bullets:
+            cv2.rectangle(
+                debug_img, (b.x1, b.y1), (b.x2, b.y2), colors["bullet"], thickness
+            )
+        for e in enemies:
+            cv2.rectangle(
+                debug_img, (e.x1, e.y1), (e.x2, e.y2), colors["enemy"], thickness
+            )
+        for p in players:
+            cv2.rectangle(
+                debug_img, (p.x1, p.y1), (p.x2, p.y2), colors["player"], thickness
+            )
 
-        # Janela em tempo real
+        # Atualiza a captura de tela para debug
         debug.debug_img = debug_img
 
         return (

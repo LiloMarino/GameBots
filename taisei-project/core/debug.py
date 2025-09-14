@@ -19,7 +19,7 @@ def debug_show():
         "YOLO Debug",
         cv2.resize(debug_img, (0, 0), fx=SCALE, fy=SCALE),
     )
-    if frame_count % 20 == 0:
+    if frame_count % 2 == 0:
         logger.debug(f"Salvando imagem {frame_count}")
         save_image(debug_img, f"debug_{frame_count}")
     cv2.waitKey(1)
