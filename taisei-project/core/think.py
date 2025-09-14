@@ -20,6 +20,8 @@ class DodgeStrategy(Enum):
 class Region:
     bbox: BoundingBox
     count: int = 0
+    danger_score: float = 0
+    score: float = 0
 
 
 class Think:
@@ -199,16 +201,6 @@ class Think:
             for i, (dx, dy) in offsets.items()
         }
 
-        # Desenhar grid
-        for r in regions.values():
-            cv2.rectangle(
-                debug.debug_img,
-                (r.bbox.x1, r.bbox.y1),
-                (r.bbox.x2, r.bbox.y2),
-                (255, 0, 0),
-                2,
-            )
-
         # ==============================
         # 2) Contar projéteis em cada região
         # ==============================
@@ -217,56 +209,101 @@ class Think:
                 if region.bbox.intersects(b):
                     regions[idx].count += 1
 
+        # ==============================
+        # 3) Definir vizinhos de cada célula
+        # ==============================
+        vizinhos = {
+            1: [2, 4, 5],
+            2: [1, 3, 5],
+            3: [2, 6, 5],
+            4: [1, 5, 7],
+            5: [2, 4, 6, 8],  # player
+            6: [3, 5, 9],
+            7: [4, 8, 5],
+            8: [5, 7, 9],
+            9: [6, 8, 5],
+        }
+
+        # ==============================
+        # 4) Calcular score de perigo
+        # ==============================
         for idx, region in regions.items():
-            logger.info("Regiao %d: %d projeteis", idx, region.count)
+            neighbor_count = sum(regions[n].count for n in vizinhos[idx])
+            region.danger_score = region.count + 0.5 * neighbor_count
 
         # ==============================
-        # 3) Escolher regiões com menor quantidade
+        # 5) Calcular score final para cada região
         # ==============================
-        min_count = min(r.count for r in regions.values())
-        best_regions = [
-            idx for idx, r in regions.items() if r.count == min_count and idx != 5
-        ]
-        logger.info("Melhores regioes: %s", best_regions)
-
-        # ==============================
-        # 4) Critério de desempate
-        # ==============================
-        alpha = 0.5  # peso da distância à posição inicial
         enemies_center_x = [e.center()[0] for e in detections.enemies]
 
-        def combined_score(region_idx: int):
-            region_cx, region_cy = regions[region_idx].bbox.center()
-            dist_enemy = (
-                min(abs(region_cx - ex) for ex in enemies_center_x)
-                if enemies_center_x
-                else 0
+        for idx, region in regions.items():
+            region_cx, region_cy = region.bbox.center()
+
+            # Distância até a posição inicial
+            initial_pos_dist = self._dist(
+                (region_cx, region_cy), self.initial_player_pos
             )
-            dist_initial = self._dist((region_cx, region_cy), self.initial_player_pos)
-            return dist_enemy + alpha * dist_initial
+            initial_pos_dist = max(initial_pos_dist, 1e-6)  # Evitar divisão por zero
 
-        chosen = min(best_regions, key=combined_score)
+            # Distância até o inimigo mais próximo (em x)
+            if enemies_center_x:
+                min_enemy_dist = min(abs(region_cx - ex) for ex in enemies_center_x)
+                min_enemy_dist = max(min_enemy_dist, 1e-6)
+            else:
+                min_enemy_dist = (
+                    1e6  # Se não houver inimigo, trata como distância infinita
+                )
 
-        logger.info("Regiao escolhida: %d", chosen)
+            # score final
+            region.score = (
+                (1.0 / initial_pos_dist) + (1.0 / min_enemy_dist) - region.danger_score
+            )
+
+            logger.info(
+                "Regiao %d: danger=%.2f, dist_init=%.2f, dist_enemy=%.2f, score=%.4f",
+                idx,
+                region.danger_score,
+                initial_pos_dist,
+                min_enemy_dist,
+                region.score,
+            )
+
         # ==============================
-        # 5) Converter região escolhida em vetor de movimento
+        # 6) Escolher região com maior score
+        # ==============================
+        chosen = max(
+            (idx for idx in regions.keys() if idx != 5),
+            key=lambda i: regions[i].score,
+        )
+        logger.info("Regiao escolhida: %d (score=%.4f)", chosen, regions[chosen].score)
+
+        # ==============================
+        # 7) Converter região escolhida em vetor de movimento
         # ==============================
         region_center = regions[chosen].bbox.center()
         move_x = region_center[0] - px
         move_y = region_center[1] - py
 
         # Debug visual
-        r = regions[chosen]
+        for r in regions.values():
+            cv2.rectangle(
+                debug.debug_img,
+                (r.bbox.x1, r.bbox.y1),
+                (r.bbox.x2, r.bbox.y2),
+                (255, 0, 0),
+                2,
+            )
+        chosen_region = regions[chosen]
         cv2.rectangle(
             debug.debug_img,
-            (r.bbox.x1, r.bbox.y1),
-            (r.bbox.x2, r.bbox.y2),
+            (chosen_region.bbox.x1, chosen_region.bbox.y1),
+            (chosen_region.bbox.x2, chosen_region.bbox.y2),
             (0, 255, 255),
             2,
         )
         debug.draw_arrow((px, py), (move_x, move_y), color=(0, 255, 0))
 
-        return (move_x, move_y), 0.15
+        return (move_x, move_y), 0.1
 
     def _dodge_mix_distancia_densidade(
         self, screenshot: np.ndarray, detections: Detections
