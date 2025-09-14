@@ -113,6 +113,22 @@ class Think:
             perp1 = (-vy, vx)
             perp2 = (vy, -vx)
 
+            # ==============================
+            # Versão extra só para salvar
+            # ==============================
+            debug_img_extra = debug.debug_img.copy()
+
+            # Desenha as duas perpendiculares (cores diferentes)
+            debug.draw_arrow(
+                player, perp1, img=debug_img_extra, color=(255, 0, 255)
+            )  # magenta
+            debug.draw_arrow(
+                player, perp2, img=debug_img_extra, color=(0, 255, 255)
+            )  # amarelo
+
+            # Salva imagem extra com perpendiculares
+            debug.save_image(debug_img_extra, f"debug_perp_{debug.frame_count}")
+
             # Caso existam inimigos na tela, escolher a perpendicular que aproxima de um inimigo
             if detections.enemies:
                 enemies_center_x = [e.center()[0] for e in detections.enemies]
@@ -123,7 +139,6 @@ class Think:
 
                 p1_pos = (player[0] + perp1[0], player[1] + perp1[1])
                 p2_pos = (player[0] + perp2[0], player[1] + perp2[1])
-
                 p1_score = dist_to_nearest_enemy(p1_pos)
                 p2_score = dist_to_nearest_enemy(p2_pos)
 
