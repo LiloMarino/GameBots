@@ -19,13 +19,17 @@ def debug_show():
         "YOLO Debug",
         cv2.resize(debug_img, (0, 0), fx=SCALE, fy=SCALE),
     )
-    if frame_count % 2 == 0:
+    if frame_count % 1 == 0:
         logger.debug(f"Salvando imagem {frame_count}")
         save_image(debug_img, f"debug_{frame_count}")
     cv2.waitKey(1)
 
 
-def save_image(image: cv2.typing.MatLike, name: str):
+def save_image(image: cv2.typing.MatLike, name: str, clip: bool = True):
+    if clip:
+        x, y, w, h = 313, 35, 862, 1007
+        image = image[y : y + h, x : x + w]
+
     image_path = DEBUG_DIR / f"{name}.png"
     cv2.imwrite(str(image_path), image)
 
