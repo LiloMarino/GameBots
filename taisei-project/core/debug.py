@@ -32,7 +32,7 @@ def save_image(image: cv2.typing.MatLike, name: str):
 
 def draw_arrow(
     start: tuple[int, int],
-    direction: tuple[int, int],
+    direction: tuple[float, float],
     img: np.ndarray | None = None,
     color: tuple[int, int, int] = (0, 255, 0),
     scale: int = 50,

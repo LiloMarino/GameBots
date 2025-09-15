@@ -10,7 +10,7 @@ class Act:
     def __init__(self):
         self.kb = Controller()
 
-    def desvia(self, vetor: Tuple[int, int], step_time: float = 0.05):
+    def desvia(self, vetor: Tuple[float, float], step_time: float = 0.05):
         """
         Converte um vetor (dx, dy) em movimento e executa a jogada.
         Suporta 8 direções: N, NE, E, SE, S, SW, W, NW.

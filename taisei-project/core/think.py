@@ -24,6 +24,22 @@ class Region:
     score: float = 0
 
 
+# ============================================================
+# Utils
+# ============================================================
+
+
+def dist(a: Tuple[float, float], b: Tuple[float, float]) -> float:
+    return math.hypot(a[0] - b[0], a[1] - b[1])
+
+
+def normalize(v: tuple[int, int], scale: int) -> tuple[float, float]:
+    norm = math.hypot(v[0], v[1])
+    if norm == 0:
+        return (0, 0)
+    return ((v[0] / norm) * scale, (v[1] / norm) * scale)
+
+
 class Think:
 
     def __init__(
@@ -49,7 +65,7 @@ class Think:
 
     def think(
         self, screenshot: np.ndarray, detections: Detections
-    ) -> Tuple[Tuple[int, int], float]:
+    ) -> Tuple[Tuple[float, float], float]:
         """
         Decide o vetor de destino baseado na estratégia de desvio configurada.
         Retorna (dx, dy) relativo ao player.
@@ -75,7 +91,7 @@ class Think:
     # ============================================================
     def _dodge_menor_distancia(
         self, screenshot: np.ndarray, detections: Detections
-    ) -> Tuple[Tuple[int, int], float]:
+    ) -> Tuple[Tuple[float, float], float]:
         if not detections.players:
             return (0, 0), 0
 
@@ -92,7 +108,7 @@ class Think:
         threats = [
             t
             for t in detections.bullets + detections.enemies
-            if self._dist(player, t.center()) <= self.radius
+            if dist(player, t.center()) <= self.radius
         ]
         cv2.circle(debug.debug_img, player, self.radius, (0, 0, 255), 2)
 
@@ -101,7 +117,7 @@ class Think:
         # ==============================
         if threats:
             # Threat mais próxima
-            closest = min(threats, key=lambda b: self._dist(player, b.center()))
+            closest = min(threats, key=lambda b: dist(player, b.center()))
             cx, cy = closest.center()
 
             # Linha player -> projétil
@@ -112,6 +128,10 @@ class Think:
             # Duas perpendiculares possíveis
             perp1 = (-vy, vx)
             perp2 = (vy, -vx)
+            perp1 = normalize(
+                perp1, 50
+            )  # OBS: essa magnitude não tem relação com o movimento
+            perp2 = normalize(perp2, 50)
 
             # ==============================
             # Versão extra só para salvar
@@ -145,11 +165,11 @@ class Think:
                 perp = perp1 if p1_score < p2_score else perp2
             else:
                 # Se não houver inimigos, volta à posição inicial
-                dist1 = self._dist(
+                dist1 = dist(
                     (player[0] + perp1[0], player[1] + perp1[1]),
                     self.initial_player_pos,
                 )
-                dist2 = self._dist(
+                dist2 = dist(
                     (player[0] + perp2[0], player[1] + perp2[1]),
                     self.initial_player_pos,
                 )
@@ -182,7 +202,7 @@ class Think:
 
     def _dodge_menor_densidade(
         self, screenshot: np.ndarray, detections: Detections
-    ) -> Tuple[Tuple[int, int], float]:
+    ) -> Tuple[Tuple[float, float], float]:
         if not detections.players:
             return (0, 0), 0
 
@@ -255,9 +275,7 @@ class Think:
             region_cx, region_cy = region.bbox.center()
 
             # Distância até a posição inicial
-            initial_pos_dist = self._dist(
-                (region_cx, region_cy), self.initial_player_pos
-            )
+            initial_pos_dist = dist((region_cx, region_cy), self.initial_player_pos)
             initial_pos_dist = max(initial_pos_dist, 1e-6)  # Evitar divisão por zero
 
             # Distância até o inimigo mais próximo (em x)
@@ -322,7 +340,7 @@ class Think:
 
     def _dodge_mix_distancia_densidade(
         self, screenshot: np.ndarray, detections: Detections
-    ) -> Tuple[Tuple[int, int], float]:
+    ) -> Tuple[Tuple[float, float], float]:
         if not detections.players:
             return (0, 0), 0
 
@@ -342,13 +360,11 @@ class Think:
         # ------------------------------
         critical_radius = (self.cell_size * math.sqrt(2)) / 2
         threats = [
-            t
-            for t in detections.bullets
-            if self._dist(player, t.center()) <= critical_radius
+            t for t in detections.bullets if dist(player, t.center()) <= critical_radius
         ]
         if threats:
             # Threat mais próxima
-            closest = min(threats, key=lambda b: self._dist(player, b.center()))
+            closest = min(threats, key=lambda b: dist(player, b.center()))
             cx, cy = closest.center()
 
             # Vetor player->projétil
@@ -434,10 +450,3 @@ class Think:
                 return idx, -region.danger_score  # quanto menor o danger, melhor
 
         return 5, -regions[5].danger_score
-
-    # ============================================================
-    # Utils
-    # ============================================================
-    @staticmethod
-    def _dist(a: Tuple[float, float], b: Tuple[float, float]) -> float:
-        return math.hypot(a[0] - b[0], a[1] - b[1])
