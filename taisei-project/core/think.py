@@ -48,12 +48,13 @@ class Think:
         dodge_strategy: DodgeStrategy = DodgeStrategy.MENOR_DISTANCIA,
         detect_radius: int = 250,
         cell_size: int = 200,
+        travel_time: float = 0.05,
     ) -> None:
         self.region = region
         self.initial_player_pos: tuple[int, int] | None = None
         self.radius = detect_radius
         self.cell_size = cell_size
-        self.returning_to_center = False
+        self.travel_time = travel_time
         self.set_dodge_strategy(dodge_strategy)
 
     def set_dodge_strategy(self, dodge_strategy: DodgeStrategy):
@@ -134,20 +135,20 @@ class Think:
             perp2 = normalize(perp2, 50)
 
             # ==============================
-            # Versão extra só para salvar
+            # DEBUG
             # ==============================
-            debug_img_extra = debug.debug_img.copy()
+            # debug_img_extra = debug.debug_img.copy()
 
-            # Desenha as duas perpendiculares (cores diferentes)
-            debug.draw_arrow(
-                player, perp1, img=debug_img_extra, color=(255, 0, 255)
-            )  # magenta
-            debug.draw_arrow(
-                player, perp2, img=debug_img_extra, color=(0, 255, 255)
-            )  # amarelo
+            # # Desenha as duas perpendiculares (cores diferentes)
+            # debug.draw_arrow(
+            #     player, perp1, img=debug_img_extra, color=(255, 255, 0)
+            # )  # magenta
+            # debug.draw_arrow(
+            #     player, perp2, img=debug_img_extra, color=(0, 255, 255)
+            # )  # amarelo
 
-            # Salva imagem extra com perpendiculares
-            debug.save_image(debug_img_extra, f"debug_perp_{debug.frame_count}")
+            # # Salva imagem extra com perpendiculares
+            # debug.save_image(debug_img_extra, f"debug_perp_{debug.frame_count}")
 
             # Caso existam inimigos na tela, escolher a perpendicular que aproxima de um inimigo
             if detections.enemies:
@@ -178,7 +179,7 @@ class Think:
             # Desenha seta na direção escolhida
             debug.draw_arrow(player, perp)
 
-            return perp, 0.05
+            return perp, self.travel_time
 
         # ==============================
         # 3) Caso não haja threats próximas
@@ -190,7 +191,7 @@ class Think:
             move_x = closest_enemy_x - player[0]
 
             debug.draw_arrow(player, (move_x, 0))
-            return (move_x, 0), 0.05
+            return (move_x, 0), self.travel_time
 
         # ==============================
         # 4) Caso não haja threats nem inimigos
@@ -198,7 +199,7 @@ class Think:
         move_x = self.initial_player_pos[0] - player[0]
         move_y = self.initial_player_pos[1] - player[1]
         debug.draw_arrow(player, (move_x, move_y))
-        return (move_x, move_y), 0.05
+        return (move_x, move_y), self.travel_time
 
     def _dodge_menor_densidade(
         self, screenshot: np.ndarray, detections: Detections
@@ -336,7 +337,7 @@ class Think:
         )
         debug.draw_arrow((px, py), (move_x, move_y), color=(0, 255, 0))
 
-        return (move_x, move_y), 0.1
+        return (move_x, move_y), self.travel_time
 
     def _dodge_mix_distancia_densidade(
         self, screenshot: np.ndarray, detections: Detections
@@ -384,7 +385,7 @@ class Think:
                 "MixStrategy: Threat próxima detectada! Usando menor distância + densidade"
             )
             debug.draw_arrow(player, chosen, color=(0, 0, 255))
-            return chosen, 0.05
+            return chosen, self.travel_time
 
         # ------------------------------
         # 2) Caso contrário, usar menor densidade normal
