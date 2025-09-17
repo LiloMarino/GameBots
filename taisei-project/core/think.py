@@ -318,7 +318,49 @@ class Think:
         move_x = region_center[0] - px
         move_y = region_center[1] - py
 
-        # Debug visual
+        # ==============================
+        # Debug visual - imagem 1: grid com numeração
+        # ==============================
+        debug_img_grid = debug.debug_img.copy()
+        for idx, r in regions.items():
+            # retângulo da região
+            cv2.rectangle(
+                debug_img_grid,
+                (r.bbox.x1, r.bbox.y1),
+                (r.bbox.x2, r.bbox.y2),
+                (255, 0, 0),
+                2,
+            )
+            # índice da região
+            cx, cy = r.bbox.center()
+
+            # 1) desenha a "borda" preta
+            cv2.putText(
+                debug_img_grid,
+                str(idx),
+                (cx - 10, cy + 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 0, 0),  # cor preta
+                4,  # espessura maior
+                cv2.LINE_AA,
+            )
+            # 2) desenha o texto branco por cima
+            cv2.putText(
+                debug_img_grid,
+                str(idx),
+                (cx - 10, cy + 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (255, 255, 255),  # cor branca
+                2,  # espessura menor
+                cv2.LINE_AA,
+            )
+        debug.save_image(debug_img_grid, f"debug_grid_{debug.frame_count}")
+
+        # ==============================
+        # Debug visual - imagem 2: região escolhida + seta
+        # ==============================
         for r in regions.values():
             cv2.rectangle(
                 debug.debug_img,
