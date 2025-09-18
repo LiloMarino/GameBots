@@ -12,7 +12,7 @@ logger.setLevel(logging.DEBUG)
 RESULTADOS_DIR = Path("../resultados")
 
 if __name__ == "__main__":
-    bot = Bot(DodgeStrategy.MENOR_DENSIDADE)
+    bot = Bot(DodgeStrategy.MIX_DISTANCIA_DENSIDADE)
     while not bot.is_active():
         time.sleep(1)
     bot.start(Difficulty.EASY)
