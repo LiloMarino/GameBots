@@ -129,9 +129,7 @@ class Think:
             # Duas perpendiculares possíveis
             perp1 = (-vy, vx)
             perp2 = (vy, -vx)
-            perp1 = normalize(
-                perp1, 50
-            )  # OBS: essa magnitude não tem relação com o movimento
+            perp1 = normalize(perp1, 50)
             perp2 = normalize(perp2, 50)
 
             # ==============================
@@ -417,6 +415,8 @@ class Think:
             # Perpendiculares
             perp1 = (-vy, vx)
             perp2 = (vy, -vx)
+            perp1 = normalize(perp1, self.cell_size)
+            perp2 = normalize(perp2, self.cell_size)
 
             # ====================================================
             # Construir grid de regiões em torno do player
@@ -470,15 +470,15 @@ class Think:
             # ====================================================
             # Avaliar cada perpendicular
             # ====================================================
-            def score_perp(perp: Tuple[int, int]) -> Tuple[int, float]:
+            def score_perp(perp: Tuple[float, float]) -> Tuple[int, float]:
                 target_pos = (player[0] + perp[0], player[1] + perp[1])
                 for idx, region in regions.items():
                     if region.bbox.contains(*target_pos):
-                        return idx, -region.danger_score
-                return 5, -regions[5].danger_score  # fallback centro
+                        return idx, region.danger_score
+                return 5, regions[5].danger_score  # fallback centro
 
-            idx1, score1 = score_perp(perp1)
-            idx2, score2 = score_perp(perp2)
+            idx1, danger_score1 = score_perp(perp1)
+            idx2, danger_score2 = score_perp(perp2)
 
             # ====================================================
             # DEBUG VISUAL
@@ -499,15 +499,17 @@ class Think:
             debug.save_image(debug_img_options, f"debug_perp_{debug.frame_count}")
 
             # Escolha final
-            chosen = perp1 if score1 > score2 else perp2
-            chosen_idx = idx1 if score1 > score2 else idx2
+            if danger_score1 < danger_score2:
+                chosen, chosen_idx = perp1, idx1
+            else:
+                chosen, chosen_idx = perp2, idx2
 
             logger.info(
                 "MixStrategy: Threat próxima detectada! Escolhida perpendicular da região %d "
                 "(score=%.2f vs %.2f)",
                 chosen_idx,
-                max(score1, score2),
-                min(score1, score2),
+                max(danger_score1, danger_score2),
+                min(danger_score1, danger_score2),
             )
 
             # 2) Imagem final: seta escolhida (verde) + highlight região

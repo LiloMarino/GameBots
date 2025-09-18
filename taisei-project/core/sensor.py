@@ -42,7 +42,7 @@ class BoundingBox:
             or self.y1 >= other.y2  # completamente abaixo
         )
 
-    def contains(self, x: int, y: int) -> bool:
+    def contains(self, x: float, y: float) -> bool:
         """Verifica se um ponto (x, y) está dentro da bounding box."""
         return self.x1 <= x < self.x2 and self.y1 <= y < self.y2
 
