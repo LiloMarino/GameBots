@@ -98,7 +98,7 @@ class Bot:
 
             vector, step = self.think.think(screenshot, detections)
             debug.debug_show()
-            self.act.desvia(vector, step)
+            self.act.dodge(vector, step)
 
     def is_active(self):
         return self.bot_ativo
