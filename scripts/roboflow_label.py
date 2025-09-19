@@ -5,7 +5,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 # Lendo a imagem
-img = cv2.imread("frame_0037.jpg")
+nome = "frame_0224"
+img = cv2.imread(f"{nome}.jpg")
 img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 draw = ImageDraw.Draw(img_pil)
 
@@ -14,7 +15,7 @@ font_path = r"C:\Windows\Fonts\tahoma.ttf"
 font = ImageFont.truetype(font_path, 21)
 
 # Lendo JSON
-with open("frame_0037.json") as f:
+with open(f"{nome}.json") as f:
     data = json.load(f)
 
 boxes = data["boxes"]
@@ -70,7 +71,7 @@ for box in boxes:
 
 # Convertendo de volta para OpenCV
 img = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-cv2.imwrite("saida_pillow.jpg", img)
+cv2.imwrite("exemplar_224.jpg", img)
 cv2.imshow("Imagem com Boxes", img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

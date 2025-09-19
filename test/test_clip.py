@@ -1,7 +1,10 @@
+from pathlib import Path
+
 import cv2
 
 # Carrega a imagem de teste
-img = cv2.imread("taisei-project/debug/debug_1.png")
+nome_img = Path("exemplar_224.jpg")
+img = cv2.imread(str(nome_img))
 
 if img is None:
     raise FileNotFoundError("Imagem não encontrada!")
@@ -39,3 +42,4 @@ while True:
 
 cv2.destroyAllWindows()
 print(f"Recorte final: x={x}, y={y}, w={w}, h={h}")
+cv2.imwrite(f"{nome_img.stem}_cortada.jpg", img[y : y + h, x : x + w])
