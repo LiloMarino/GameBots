@@ -72,7 +72,7 @@ class Bot:
         # Alterar para enquanto estiver vidas
         self.act.continuous_fire(True)
         player_not_detected = 0
-        while player_not_detected < 50:
+        while player_not_detected < 200:
             while not self.bot_ativo:
                 self.act.continuous_fire(False)
                 time.sleep(1)
@@ -81,6 +81,10 @@ class Bot:
             if not detections.players:
                 player_not_detected += 1
                 logger.info(f"Jogador nao detectado ({player_not_detected})")
+                if player_not_detected == 100:
+                    self.act.speedup_dialog(True)
+                    time.sleep(0.5)
+                    self.act.speedup_dialog(False)
                 self.act.continuous_fire(False)
                 continue
             else:
@@ -103,10 +107,15 @@ class Bot:
     def restart(self):
         # MÉTODO INSEGURO DE RESTART
         self.act.press_key(Key.down)
+        time.sleep(0.5)
         self.act.press_key(Key.down)
+        time.sleep(0.5)
         self.act.fire()
+        time.sleep(0.5)
         self.act.press_key(Key.right)
+        time.sleep(0.5)
         self.act.fire()
+        time.sleep(0.5)
 
     def is_active(self):
         return self.bot_ativo

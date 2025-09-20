@@ -38,7 +38,7 @@ def capture_score_image(bot: Bot, run_info: dict):
 def run_tests(bot: Bot, strategy: DodgeStrategy, n_runs=10):
     bot.think.set_dodge_strategy(strategy)
 
-    bombs_options = [True, False]
+    bombs_options = [False, True]
     travel_time_options = [0.5, 1.0, 1.5, 2.0]
     cell_size_options = [0.5, 1.0, 1.5, 2.0, 3.0]
 
@@ -73,18 +73,17 @@ def execute_runs(
 
         try:
             bot.run(use_bombs=bomb)
+            run_info = {
+                "strategy": strategy.name,
+                "run_index": run_index,
+                "bomb": bomb,
+                "travel_time": travel_time,
+                "cell_size": cell_size,
+            }
+            capture_score_image(bot, run_info)
             bot.restart()
         except Exception as e:
             logger.error(f"Erro durante execução: {e}")
-
-        run_info = {
-            "strategy": strategy.name,
-            "run_index": run_index,
-            "bomb": bomb,
-            "travel_time": travel_time,
-            "cell_size": cell_size,
-        }
-        capture_score_image(bot, run_info)
 
 
 if __name__ == "__main__":
