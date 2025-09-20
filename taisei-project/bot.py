@@ -1,13 +1,13 @@
 import threading
 import time
 
-import cv2
 import keyboard
 from core import debug
 from core.act import Act
 from core.sensor import Difficulty, Sensor
 from core.think import DodgeStrategy, Think
 from logger_config import logger
+from pynput.keyboard import Key
 
 
 class Bot:
@@ -101,7 +101,12 @@ class Bot:
             self.act.dodge(vector, step)
 
     def restart(self):
-        pass
+        # MÉTODO INSEGURO DE RESTART
+        self.act.press_key(Key.down)
+        self.act.press_key(Key.down)
+        self.act.fire()
+        self.act.press_key(Key.right)
+        self.act.fire()
 
     def is_active(self):
         return self.bot_ativo
