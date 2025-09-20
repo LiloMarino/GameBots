@@ -34,7 +34,7 @@ class Bot:
         estado = "ATIVADO" if self.bot_ativo else "PAUSADO"
         logger.info(f"{estado}")
 
-    def start(self, difficulty: Difficulty) -> None:
+    def start(self, difficulty: Difficulty = Difficulty.EASY) -> None:
         self.sensor.set_difficulty(difficulty)
 
         # Seleciona o start
@@ -99,6 +99,9 @@ class Bot:
             vector, step = self.think.think(screenshot, detections)
             debug.debug_show()
             self.act.dodge(vector, step)
+
+    def restart(self):
+        pass
 
     def is_active(self):
         return self.bot_ativo
