@@ -23,7 +23,7 @@ def capture_score_image(bot: Bot, run_info: dict):
     cropped = screenshot[y : y + h, x : x + w]
 
     # Monta o nome do arquivo
-    file_name = f"{run_info['strategy']}_run{run_info['run_index']}"
+    file_name = f"{run_info['strategy']}_EASY_run{run_info['run_index']}"
     for key in ["bomb", "desloc", "cell_size"]:
         if key in run_info:
             file_name += f"_{key}{run_info[key]}"
