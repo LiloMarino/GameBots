@@ -41,6 +41,9 @@ def normalize(v: tuple[int, int], scale: int) -> tuple[float, float]:
 
 
 class Think:
+    DEFAULT_DETECT_RADIUS = 250
+    DEFAULT_CELL_SIZE = 200
+    DEFAULT_TRAVEL_TIME = 0.05
 
     def __init__(
         self,
@@ -63,6 +66,12 @@ class Think:
             DodgeStrategy.MENOR_DENSIDADE: self._dodge_menor_densidade,
             DodgeStrategy.MIX_DISTANCIA_DENSIDADE: self._dodge_mix_distancia_densidade,
         }.get(dodge_strategy, self._dodge_menor_distancia)
+
+    def set_travel_time_mult(self, multiplier: float):
+        self.travel_time = self.DEFAULT_TRAVEL_TIME * multiplier
+
+    def set_cell_size_mult(self, multiplier: float):
+        self.cell_size = int(self.DEFAULT_CELL_SIZE * multiplier)
 
     def think(
         self, screenshot: np.ndarray, detections: Detections

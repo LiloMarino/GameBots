@@ -24,7 +24,7 @@ def capture_score_image(bot: Bot, run_info: dict):
 
     # Monta o nome do arquivo
     file_name = f"{run_info['strategy']}_EASY_run{run_info['run_index']}"
-    for key in ["bomb", "desloc", "cell_size"]:
+    for key in ["bomb", "travel_time", "cell_size"]:
         if key in run_info:
             file_name += f"_{key}{run_info[key]}"
 
@@ -39,14 +39,14 @@ def run_tests(bot: Bot, strategy: DodgeStrategy, n_runs=10):
     bot.think.set_dodge_strategy(strategy)
 
     bombs_options = [True, False]
-    desloc_options = [0.5, 1.0, 1.5, 2.0]
-    cell_size_options = [0.5, 1.0, 1.5, 2.0]
+    travel_time_options = [0.5, 1.0, 1.5, 2.0]
+    cell_size_options = [0.5, 1.0, 1.5, 2.0, 3.0]
 
     for bomb in bombs_options:
         execute_runs(bot, strategy, n_runs, bomb=bomb)
 
-    for desloc in desloc_options:
-        execute_runs(bot, strategy, n_runs, desloc=desloc)
+    for travel_time in travel_time_options:
+        execute_runs(bot, strategy, n_runs, travel_time=travel_time)
 
     if "DENSIDADE" in strategy.name:
         for cell_size in cell_size_options:
@@ -58,14 +58,16 @@ def execute_runs(
     strategy: DodgeStrategy,
     n_runs: int,
     bomb: bool = False,
-    desloc: float = 1,
+    travel_time: float = 1,
     cell_size: float = 1,
 ):
-    bot.think.set_desloc_multiplier(desloc)
-    bot.think.set_cell_size_multiplier(cell_size)
+    bot.think.set_travel_time_mult(travel_time)
+    bot.think.set_cell_size_mult(cell_size)
     for run_index in range(n_runs):
+        while not bot.is_active():
+            time.sleep(1)
         logger.info(
-            f"Iteração {run_index+1}/{n_runs} | {strategy.name} | bomb={bomb} | desloc={desloc} | cell_size={cell_size}"
+            f"Iteração {run_index+1}/{n_runs} | {strategy.name} | bomb={bomb} | travel_time={travel_time} | cell_size={cell_size}"
         )
         bot.restart()
         bot.start()
@@ -79,7 +81,7 @@ def execute_runs(
             "strategy": strategy.name,
             "run_index": run_index,
             "bomb": bomb,
-            "desloc": desloc,
+            "travel_time": travel_time,
             "cell_size": cell_size,
         }
         capture_score_image(bot, run_info)
