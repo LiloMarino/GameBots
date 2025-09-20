@@ -13,7 +13,7 @@ RESULTADOS_DIR = Path("../resultados")
 RESULTADOS_DIR.mkdir(exist_ok=True)
 SCORES_DIR = RESULTADOS_DIR / "score_images"
 SCORES_DIR.mkdir(exist_ok=True)
-SCORE_ROI = (50, 10, 200, 50)
+SCORE_ROI = (1429, 107, 231, 58)
 
 
 def capture_score_image(bot: Bot, run_info: dict):
@@ -69,11 +69,11 @@ def execute_runs(
         logger.info(
             f"Iteração {run_index+1}/{n_runs} | {strategy.name} | bomb={bomb} | travel_time={travel_time} | cell_size={cell_size}"
         )
-        bot.restart()
         bot.start()
 
         try:
             bot.run(use_bombs=bomb)
+            bot.restart()
         except Exception as e:
             logger.error(f"Erro durante execução: {e}")
 

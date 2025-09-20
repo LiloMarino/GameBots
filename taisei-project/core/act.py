@@ -51,6 +51,10 @@ class Act:
         for k in keys:
             self.kb.release(k)
 
+    def press_key(self, key):
+        self.kb.press(key)
+        self.kb.release(key)
+
     def fire(self):
         """Disparo único (Z)."""
         self.kb.press("z")
