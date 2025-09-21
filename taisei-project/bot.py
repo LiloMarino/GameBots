@@ -103,9 +103,10 @@ class Bot:
             vector, step = self.think.think(screenshot, detections)
             debug.debug_show()
             self.act.dodge(vector, step)
-            if self.sensor.match_template("win"):
-                self.win_restart()
-                break
+            if not detections.enemies and not detections.bullets:
+                if self.sensor.match_template("win"):
+                    self.win_restart()
+                    break
 
     def restart(self):
         # MÉTODO INSEGURO DE RESTART

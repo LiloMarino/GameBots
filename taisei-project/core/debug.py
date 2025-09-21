@@ -13,6 +13,7 @@ frame_count = 0
 
 
 def debug_show():
+    return
     global frame_count
     frame_count += 1
     cv2.imshow(
@@ -26,6 +27,7 @@ def debug_show():
 
 
 def save_image(image: cv2.typing.MatLike, name: str, clip: bool = True):
+    return
     if clip:
         x, y, w, h = 313, 35, 862, 1007
         image = image[y : y + h, x : x + w]
@@ -41,6 +43,7 @@ def draw_arrow(
     color: tuple[int, int, int] = (0, 255, 0),
     scale: int = 50,
 ) -> None:
+    return
     """
     Desenha uma seta em uma imagem a partir de um ponto inicial na direção de um vetor.
 
