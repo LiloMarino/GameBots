@@ -85,6 +85,8 @@ class Bot:
                     self.act.speedup_dialog(True)
                     time.sleep(0.5)
                     self.act.speedup_dialog(False)
+                    if self.sensor.match_template("win"):
+                        self.win_restart()
                 self.act.continuous_fire(False)
                 continue
             else:
@@ -106,6 +108,7 @@ class Bot:
 
     def restart(self):
         # MÉTODO INSEGURO DE RESTART
+        logger.info("Reiniciando partida...")
         self.act.press_key(Key.down)
         time.sleep(0.5)
         self.act.press_key(Key.down)
@@ -116,6 +119,9 @@ class Bot:
         time.sleep(0.5)
         self.act.fire()
         time.sleep(0.5)
+
+    def win_restart(self):
+        logger.info("Vitoria! Reiniciando...")
 
     def is_active(self):
         return self.bot_ativo

@@ -7,7 +7,7 @@ from bot import Bot
 from core.think import DodgeStrategy
 from logger_config import logger
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 RESULTADOS_DIR = Path("../resultados")
 RESULTADOS_DIR.mkdir(exist_ok=True)

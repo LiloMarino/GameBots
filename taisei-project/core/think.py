@@ -110,7 +110,7 @@ class Think:
         # Salva posição inicial na primeira chamada
         if self.initial_player_pos is None:
             self.initial_player_pos = (player[0], player[1])
-            logger.info("Posição inicial: %s", self.initial_player_pos)
+            logger.debug("Posição inicial: %s", self.initial_player_pos)
 
         # ==============================
         # 1) Filtrar threats próximas
@@ -221,7 +221,7 @@ class Think:
         # Salva posição inicial na primeira chamada
         if self.initial_player_pos is None:
             self.initial_player_pos = (px, py)
-            logger.info("Posição inicial: %s", self.initial_player_pos)
+            logger.debug("Posição inicial: %s", self.initial_player_pos)
 
         # ==============================
         # 1) Definir a grid 3x3 (centrada no player)
@@ -300,7 +300,7 @@ class Think:
                 (1.0 / initial_pos_dist) + (1.0 / min_enemy_dist) - region.danger_score
             )
 
-            logger.info(
+            logger.debug(
                 "Regiao %d: danger=%.2f, dist_init=%.2f, dist_enemy=%.2f, score=%.4f",
                 idx,
                 region.danger_score,
@@ -316,7 +316,7 @@ class Think:
             (idx for idx in regions.keys() if idx != 5),
             key=lambda i: regions[i].score,
         )
-        logger.info("Regiao escolhida: %d (score=%.4f)", chosen, regions[chosen].score)
+        logger.debug("Regiao escolhida: %d (score=%.4f)", chosen, regions[chosen].score)
 
         # ==============================
         # 7) Converter região escolhida em vetor de movimento
@@ -403,7 +403,7 @@ class Think:
 
         if self.initial_player_pos is None:
             self.initial_player_pos = (px, py)
-            logger.info("Posição inicial: %s", self.initial_player_pos)
+            logger.debug("Posição inicial: %s", self.initial_player_pos)
 
         # ------------------------------
         # 1) Ameaça imediata?
@@ -513,7 +513,7 @@ class Think:
             else:
                 chosen, chosen_idx = perp2, idx2
 
-            logger.info(
+            logger.debug(
                 "MixStrategy: Threat próxima detectada! Escolhida perpendicular da região %d "
                 "(score=%.2f vs %.2f)",
                 chosen_idx,
@@ -537,5 +537,5 @@ class Think:
         # ------------------------------
         # 2) Caso contrário, usar menor densidade normal
         # ------------------------------
-        logger.info("MixStrategy: Sem ameaça imediata, usando menor densidade")
+        logger.debug("MixStrategy: Sem ameaça imediata, usando menor densidade")
         return self._dodge_menor_densidade(screenshot, detections)

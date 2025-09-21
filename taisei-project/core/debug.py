@@ -26,7 +26,6 @@ def debug_show():
 
 
 def save_image(image: cv2.typing.MatLike, name: str, clip: bool = True):
-    return
     if clip:
         x, y, w, h = 313, 35, 862, 1007
         image = image[y : y + h, x : x + w]

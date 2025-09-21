@@ -44,7 +44,7 @@ class Act:
             keys = [Key.up, Key.right]  # NE
 
         # Pressiona as teclas correspondentes
-        logger.info(f"Desvia ({dx}, {dy}) ângulo={angle:.1f}° -> {keys}")
+        logger.debug(f"Desvia ({dx}, {dy}) ângulo={angle:.1f}° -> {keys}")
         for k in keys:
             self.kb.press(k)
         time.sleep(step_time)

@@ -181,3 +181,4 @@ debug/
 # YOLO
 *.pt
 runs/
+resultados/score_images/*.png
