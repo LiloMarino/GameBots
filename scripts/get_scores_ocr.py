@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 import easyocr
@@ -11,42 +12,29 @@ logger.setLevel(logging.DEBUG)
 RESULTADOS_DIR = Path("../resultados")
 SCORES_DIR = RESULTADOS_DIR / "score_images"
 OUTPUT_FILE = RESULTADOS_DIR / "resultados_dodge_final.parquet"
+FILENAME_REGEX = re.compile(
+    r"^(?P<strategy>.+)_(?P<difficulty>EASY)_run(?P<run_index>\d+)"
+    r"_bomb(?P<bomb>True|False)"
+    r"_travel_time(?P<travel_time>\d+(?:\.\d+)?)"
+    r"_cell_size(?P<cell_size>\d+(?:\.\d+)?)$"
+)
 
 
 def parse_filename(file_name: str) -> dict:
     """
-    Converte o nome do arquivo em um dicionário com strategy, difficulty, run_index,
-    bomb, travel_time, cell_size.
-    Exemplo:
-    MENOR_DENSIDADE_EASY_run0_bombFalse_travel_time0.5_cell_size1.png
+    Extrai informações do nome do arquivo via regex.
     """
     base = Path(file_name).stem
-    parts = base.split("_")
+    match = FILENAME_REGEX.match(base)
+    if not match:
+        raise ValueError(f"Nome de arquivo inválido: {file_name}")
 
-    # dificuldade sempre será EASY ou HARD (ou outra lista que você defina)
-    difficulties = {"EASY", "HARD"}
-    diff_idx = next(i for i, p in enumerate(parts) if p in difficulties)
-
-    strategy = "_".join(parts[:diff_idx])  # tudo antes da dificuldade
-    difficulty = parts[diff_idx]
-    run_index = int(parts[diff_idx + 1].replace("run", ""))
-
-    info = {
-        "strategy": strategy,
-        "difficulty": difficulty,
-        "run_index": run_index,
-        "bomb": None,
-        "travel_time": None,
-        "cell_size": None,
-    }
-
-    for part in parts[diff_idx + 2 :]:
-        if part.startswith("bomb"):
-            info["bomb"] = part.replace("bomb", "") == "True"
-        elif part.startswith("travel_time"):
-            info["travel_time"] = float(part.replace("travel_time", ""))
-        elif part.startswith("cell_size"):
-            info["cell_size"] = float(part.replace("cell_size", ""))
+    info = match.groupdict()
+    # Converte tipos
+    info["run_index"] = int(info["run_index"])
+    info["bomb"] = info["bomb"] == "True"
+    info["travel_time"] = float(info["travel_time"])
+    info["cell_size"] = float(info["cell_size"])
     return info
 
 
