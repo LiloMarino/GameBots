@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import timedelta
 from pathlib import Path
 
 import cv2
@@ -14,6 +15,11 @@ RESULTADOS_DIR.mkdir(exist_ok=True)
 SCORES_DIR = RESULTADOS_DIR / "score_images"
 SCORES_DIR.mkdir(exist_ok=True)
 SCORE_ROI = (1429, 107, 231, 58)
+
+# --- Variáveis globais para ETA ---
+TOTAL_RUNS = 0
+COMPLETED_RUNS = 0
+START_TIME = None
 
 
 def capture_score_image(bot: Bot, run_info: dict) -> Path:
@@ -36,7 +42,6 @@ def capture_score_image(bot: Bot, run_info: dict) -> Path:
     )
 
     cv2.imwrite(str(image_path), cropped)
-    logger.debug(f"Score salvo: {image_path}")
     return image_path
 
 
@@ -74,6 +79,7 @@ def execute_runs(
     travel_time: float = 1,
     cell_size: float = 1,
 ):
+    global COMPLETED_RUNS, START_TIME
     bot.think.set_travel_time_mult(travel_time)
     bot.think.set_cell_size_mult(cell_size)
 
@@ -83,20 +89,23 @@ def execute_runs(
         # Se o arquivo já existir, pula
         if image_path.exists():
             logger.info(f"[SKIP] Já existe: {image_path.name}")
+            COMPLETED_RUNS += 1
             continue
 
         while not bot.is_active():
             time.sleep(1)
-
         logger.info(
             f"Iteração {run_index+1}/{n_runs} | {strategy.name} | "
             f"bomb={bomb} | travel_time={travel_time} | cell_size={cell_size}"
         )
+        if START_TIME is None:
+            START_TIME = time.perf_counter()
 
-        bot.start()
-
+        run_start = time.perf_counter()
         try:
+            bot.start()
             bot.run(use_bombs=bomb)
+
             run_info = {
                 "strategy": strategy.name,
                 "run_index": run_index,
@@ -108,12 +117,30 @@ def execute_runs(
             bot.restart()
         except Exception as e:
             logger.error(f"Erro durante execução: {e}")
+        finally:
+            COMPLETED_RUNS += 1
+            elapsed = time.perf_counter() - START_TIME
+            avg_time = elapsed / COMPLETED_RUNS
+            remaining = avg_time * (TOTAL_RUNS - COMPLETED_RUNS)
+            logger.info(
+                f"[{COMPLETED_RUNS}/{TOTAL_RUNS}] "
+                f"Última execução levou {timedelta(seconds=int(time.perf_counter() - run_start))} | "
+                f"ETA restante: {timedelta(seconds=int(remaining))}"
+            )
 
 
 if __name__ == "__main__":
     bot = Bot(DodgeStrategy.MIX_DISTANCIA_DENSIDADE)
     while not bot.is_active():
         time.sleep(1)
+
+    # Calcula total de execuções planejadas
+    TOTAL_RUNS = 0
+    for strategy in DodgeStrategy:
+        TOTAL_RUNS += 2 * 20  # bomb False/True
+        TOTAL_RUNS += 4 * 20  # travel_time options
+        if "DENSIDADE" in strategy.name:
+            TOTAL_RUNS += 5 * 20  # cell_size options
 
     for strategy in DodgeStrategy:
         run_tests(bot, strategy, n_runs=20)
