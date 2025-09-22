@@ -16,23 +16,36 @@ SCORES_DIR.mkdir(exist_ok=True)
 SCORE_ROI = (1429, 107, 231, 58)
 
 
-def capture_score_image(bot: Bot, run_info: dict):
-    # Captura score
+def capture_score_image(bot: Bot, run_info: dict) -> Path:
+    """Captura a imagem de score e salva em SCORES_DIR."""
     screenshot = bot.sensor.get_screenshot()
     x, y, w, h = SCORE_ROI
     cropped = screenshot[y : y + h, x : x + w]
 
-    # Monta o nome do arquivo
-    file_name = f"{run_info['strategy']}_EASY_run{run_info['run_index']}"
-    for key in ["bomb", "travel_time", "cell_size"]:
-        if key in run_info:
-            file_name += f"_{key}{run_info[key]}"
+    # Usa o helper para montar o caminho do arquivo
+    image_path = get_run_filename(
+        strategy=(
+            run_info["strategy"]
+            if isinstance(run_info["strategy"], DodgeStrategy)
+            else DodgeStrategy[run_info["strategy"]]
+        ),
+        run_index=run_info["run_index"],
+        bomb=run_info.get("bomb", False),
+        travel_time=run_info.get("travel_time", 1.0),
+        cell_size=run_info.get("cell_size", 1.0),
+    )
 
-    # Salva a imagem
-    image_path = SCORES_DIR / f"{file_name}.png"
     cv2.imwrite(str(image_path), cropped)
     logger.debug(f"Score salvo: {image_path}")
     return image_path
+
+
+def get_run_filename(
+    strategy: DodgeStrategy, run_index: int, bomb, travel_time, cell_size
+) -> Path:
+    """Retorna o caminho esperado da imagem de score para esse run."""
+    file_name = f"{strategy.name}_EASY_run{run_index}_bomb{bomb}_travel_time{travel_time}_cell_size{cell_size}.png"
+    return SCORES_DIR / file_name
 
 
 def run_tests(bot: Bot, strategy: DodgeStrategy, n_runs=10):
@@ -63,12 +76,23 @@ def execute_runs(
 ):
     bot.think.set_travel_time_mult(travel_time)
     bot.think.set_cell_size_mult(cell_size)
+
     for run_index in range(n_runs):
+        image_path = get_run_filename(strategy, run_index, bomb, travel_time, cell_size)
+
+        # Se o arquivo já existir, pula
+        if image_path.exists():
+            logger.info(f"[SKIP] Já existe: {image_path.name}")
+            continue
+
         while not bot.is_active():
             time.sleep(1)
+
         logger.info(
-            f"Iteração {run_index+1}/{n_runs} | {strategy.name} | bomb={bomb} | travel_time={travel_time} | cell_size={cell_size}"
+            f"Iteração {run_index+1}/{n_runs} | {strategy.name} | "
+            f"bomb={bomb} | travel_time={travel_time} | cell_size={cell_size}"
         )
+
         bot.start()
 
         try:
@@ -92,6 +116,6 @@ if __name__ == "__main__":
         time.sleep(1)
 
     for strategy in DodgeStrategy:
-        run_tests(bot, strategy, n_runs=10)
+        run_tests(bot, strategy, n_runs=20)
 
     logger.info("Execução finalizada. Todas as imagens de score foram salvas.")
