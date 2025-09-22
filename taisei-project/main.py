@@ -1,5 +1,7 @@
 import logging
+import statistics
 import time
+from collections import deque
 from datetime import timedelta
 from pathlib import Path
 
@@ -19,7 +21,9 @@ SCORE_ROI = (1429, 107, 231, 58)
 # --- Variáveis globais para ETA ---
 TOTAL_RUNS = 0
 COMPLETED_RUNS = 0
+SKIPPED_RUNS = 0
 START_TIME = None
+RUN_TIMES = deque(maxlen=10)  # média móvel
 
 
 def capture_score_image(bot: Bot, run_info: dict) -> Path:
@@ -28,7 +32,6 @@ def capture_score_image(bot: Bot, run_info: dict) -> Path:
     x, y, w, h = SCORE_ROI
     cropped = screenshot[y : y + h, x : x + w]
 
-    # Usa o helper para montar o caminho do arquivo
     image_path = get_run_filename(
         strategy=(
             run_info["strategy"]
@@ -79,7 +82,7 @@ def execute_runs(
     travel_time: float = 1,
     cell_size: float = 1,
 ):
-    global COMPLETED_RUNS, START_TIME
+    global COMPLETED_RUNS, SKIPPED_RUNS, START_TIME
     bot.think.set_travel_time_mult(travel_time)
     bot.think.set_cell_size_mult(cell_size)
 
@@ -89,6 +92,7 @@ def execute_runs(
         # Se o arquivo já existir, pula
         if image_path.exists():
             logger.info(f"[SKIP] Já existe: {image_path.name}")
+            SKIPPED_RUNS += 1
             COMPLETED_RUNS += 1
             continue
 
@@ -119,14 +123,28 @@ def execute_runs(
             logger.error(f"Erro durante execução: {e}")
         finally:
             COMPLETED_RUNS += 1
-            elapsed = time.perf_counter() - START_TIME
-            avg_time = elapsed / COMPLETED_RUNS
-            remaining = avg_time * (TOTAL_RUNS - COMPLETED_RUNS)
-            logger.info(
-                f"[{COMPLETED_RUNS}/{TOTAL_RUNS}] "
-                f"Última execução levou {timedelta(seconds=int(time.perf_counter() - run_start))} | "
-                f"ETA restante: {timedelta(seconds=int(remaining))}"
-            )
+
+            exec_time = time.perf_counter() - run_start
+            RUN_TIMES.append(exec_time)
+
+            if RUN_TIMES:
+                avg_time = sum(RUN_TIMES) / len(RUN_TIMES)
+                remaining = avg_time * (TOTAL_RUNS - COMPLETED_RUNS)
+
+                # intervalo de confiança simples com desvio padrão
+                if len(RUN_TIMES) > 1:
+                    stdev = statistics.stdev(RUN_TIMES)
+                    lower = max(0, remaining - stdev * (TOTAL_RUNS - COMPLETED_RUNS))
+                    upper = remaining + stdev * (TOTAL_RUNS - COMPLETED_RUNS)
+                    eta_str = f"{timedelta(seconds=int(lower))} ~ {timedelta(seconds=int(upper))}"
+                else:
+                    eta_str = f"{timedelta(seconds=int(remaining))}"
+
+                logger.info(
+                    f"[{COMPLETED_RUNS}/{TOTAL_RUNS}] "
+                    f"Última execução levou {timedelta(seconds=int(exec_time))} | "
+                    f"ETA restante: {eta_str}"
+                )
 
 
 if __name__ == "__main__":
