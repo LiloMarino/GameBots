@@ -3,9 +3,9 @@ from pathlib import Path
 
 import easyocr
 import pandas as pd
-from logger_config import logger
 from PIL import Image
 
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 RESULTADOS_DIR = Path("../resultados")
@@ -15,24 +15,36 @@ OUTPUT_FILE = RESULTADOS_DIR / "resultados_dodge_final.parquet"
 
 def parse_filename(file_name: str) -> dict:
     """
-    Converte o nome do arquivo em um dicionário com estratégia, dificuldade, run, bomb, desloc, cell_size.
-    Exemplo de nome: MENOR_DISTANCIA_EASY_run0_bombTrue_desloc1.0_cell_size1.0.png
+    Converte o nome do arquivo em um dicionário com strategy, difficulty, run_index,
+    bomb, travel_time, cell_size.
+    Exemplo:
+    MENOR_DENSIDADE_EASY_run0_bombFalse_travel_time0.5_cell_size1.png
     """
     base = Path(file_name).stem
     parts = base.split("_")
+
+    # dificuldade sempre será EASY ou HARD (ou outra lista que você defina)
+    difficulties = {"EASY", "HARD"}
+    diff_idx = next(i for i, p in enumerate(parts) if p in difficulties)
+
+    strategy = "_".join(parts[:diff_idx])  # tudo antes da dificuldade
+    difficulty = parts[diff_idx]
+    run_index = int(parts[diff_idx + 1].replace("run", ""))
+
     info = {
-        "strategy": parts[0],
-        "difficulty": parts[1],
-        "run_index": int(parts[2].replace("run", "")),
+        "strategy": strategy,
+        "difficulty": difficulty,
+        "run_index": run_index,
         "bomb": None,
-        "desloc": None,
+        "travel_time": None,
         "cell_size": None,
     }
-    for part in parts[3:]:
+
+    for part in parts[diff_idx + 2 :]:
         if part.startswith("bomb"):
             info["bomb"] = part.replace("bomb", "") == "True"
-        elif part.startswith("desloc"):
-            info["desloc"] = float(part.replace("desloc", ""))
+        elif part.startswith("travel_time"):
+            info["travel_time"] = float(part.replace("travel_time", ""))
         elif part.startswith("cell_size"):
             info["cell_size"] = float(part.replace("cell_size", ""))
     return info
@@ -42,8 +54,7 @@ def ocr_score_image(reader, image_path: Path) -> int:
     """
     Aplica EasyOCR na imagem do score e retorna o valor como inteiro.
     """
-    img = Image.open(image_path)
-    result = reader.readtext(img, detail=0, paragraph=False)
+    result = reader.readtext(str(image_path), detail=0, paragraph=False)
     # Tenta extrair o primeiro número encontrado
     for r in result:
         r_clean = r.replace(",", "").replace(" ", "")
