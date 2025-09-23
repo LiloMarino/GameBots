@@ -108,7 +108,7 @@ def execute_runs(
         run_start = time.perf_counter()
         try:
             bot.start()
-            bot.run(use_bombs=bomb)
+            victory = bot.run(use_bombs=bomb)
 
             run_info = {
                 "strategy": strategy.name,
@@ -118,7 +118,7 @@ def execute_runs(
                 "cell_size": cell_size,
             }
             capture_score_image(bot, run_info)
-            bot.restart()
+            bot.reset(victory=victory)
         except Exception as e:
             logger.error(f"Erro durante execução: {e}")
         finally:

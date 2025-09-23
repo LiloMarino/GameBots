@@ -111,37 +111,47 @@ class Bot:
             self.act.dodge(vector, step)
             if not detections.enemies and not detections.bullets:
                 if self.sensor.match_template("win"):
-                    self.win_restart()
-                    break
+                    return True
+        return False
 
-    def restart(self):
-        # MÉTODO INSEGURO DE RESTART
+    def reset(
+        self, victory: bool = False, timeout: float = 10.0, retries: int = 5
+    ) -> None:
         logger.info("Reiniciando partida...")
-        self.act.press_key(Key.down)
-        time.sleep(0.5)
-        self.act.press_key(Key.down)
-        time.sleep(0.5)
-        self.act.fire()
-        time.sleep(0.5)
-        self.act.press_key(Key.right)
-        time.sleep(0.5)
-        self.act.fire()
-        time.sleep(0.5)
 
-    def win_restart(self):
-        logger.info("Vitoria! Reiniciando...")
-        self.act.press_key(Key.esc)
-        time.sleep(0.5)
-        self.act.press_key(Key.down)
-        time.sleep(0.5)
-        self.act.press_key(Key.down)
-        time.sleep(0.5)
-        self.act.fire()
-        time.sleep(0.5)
-        self.act.press_key(Key.right)
-        time.sleep(0.5)
-        self.act.fire()
-        time.sleep(0.5)
+        if victory:
+            logger.info("Vitória detectada. Saindo para o menu...")
+            self.act.press_key(Key.esc)
+            time.sleep(0.5)
+
+        start_time = time.perf_counter()
+        while time.perf_counter() - start_time < timeout:
+            # 1. Já está no menu inicial?
+            if self.sensor.match_template("start_game"):
+                logger.info("Menu inicial detectado. Reset concluído.")
+                return
+
+            # 2. Está na tela de Continue?
+            for _ in range(retries):
+                if self.sensor.match_template("continue"):
+                    logger.info("Tela de Continue detectada. Selecionando Restart...")
+                    self.act.press_key(Key.down)
+                    time.sleep(0.5)
+                    self.act.press_key(Key.down)
+                    time.sleep(0.5)
+                    self.act.fire()
+                    time.sleep(0.5)
+                    self.act.press_key(Key.right)
+                    time.sleep(0.5)
+                    self.act.fire()
+                    time.sleep(0.5)
+                    break
+                else:
+                    logger.warning(
+                        "Tela de Continue não detectada. Tentando novamente..."
+                    )
+
+        raise TimeoutError("Não voltou para o menu inicial após reset.")
 
     def is_active(self):
         return self.bot_ativo
