@@ -56,7 +56,7 @@ def get_run_filename(
     return SCORES_DIR / file_name
 
 
-def run_tests(bot: Bot, strategy: DodgeStrategy, n_runs=10):
+def run_tests(bot: Bot, strategy: DodgeStrategy, n_runs: int):
     bot.think.set_dodge_strategy(strategy)
 
     bombs_options = [False, True]
@@ -153,14 +153,15 @@ if __name__ == "__main__":
         time.sleep(1)
 
     # Calcula total de execuções planejadas
+    N_RUNS = 20
     TOTAL_RUNS = 0
     for strategy in DodgeStrategy:
-        TOTAL_RUNS += 2 * 20  # bomb False/True
-        TOTAL_RUNS += 4 * 20  # travel_time options
+        TOTAL_RUNS += 2 * N_RUNS  # bomb False/True
+        TOTAL_RUNS += 4 * N_RUNS  # travel_time options
         if "DENSIDADE" in strategy.name:
-            TOTAL_RUNS += 5 * 20  # cell_size options
+            TOTAL_RUNS += 5 * N_RUNS  # cell_size options
 
     for strategy in DodgeStrategy:
-        run_tests(bot, strategy, n_runs=20)
+        run_tests(bot, strategy, N_RUNS)
 
     logger.info("Execução finalizada. Todas as imagens de score foram salvas.")

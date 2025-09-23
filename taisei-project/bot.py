@@ -35,34 +35,40 @@ class Bot:
         logger.info(f"{estado}")
 
     def start(self, difficulty: Difficulty = Difficulty.EASY) -> None:
-        self.sensor.set_difficulty(difficulty)
+        start_done = False
+        difficulty_done = False
+        character_done = False
 
-        # Seleciona o start
-        coords = self.sensor.match_template("start_game")
-        if coords is None:
-            logger.error("Não foi possível iniciar o jogo")
-            raise Exception("Não foi possivel iniciar o jogo")
-        self.act.fire()
-        time.sleep(1)
+        # Passo 1: Start Game
+        if self.sensor.match_template("start_game"):
+            self.act.fire()
+            time.sleep(1)
+            start_done = True
+        else:
+            logger.info("Start Game não encontrado, tentando continuar...")
 
-        # Seleciona a dificuldade
+        # Passo 2: Escolha de dificuldade
         difficulty_template = f"{difficulty.name.lower()}"
-        coords = self.sensor.match_template(difficulty_template)
-        if coords is None:
+        if self.sensor.match_template(difficulty_template):
+            self.act.fire()
+            time.sleep(1)
+            difficulty_done = True
+        else:
             logger.error("Não foi possível selecionar a dificuldade")
-            raise Exception("Não foi possivel selecionar a dificuldade")
-        self.act.fire()
-        time.sleep(1)
 
-        # Seleciona a personagem Reimu
-        coords = self.sensor.match_template("reimu")
-        if coords is None:
-            logger.error("Não foi possível selecionar a dificuldade")
-            raise Exception("Não foi possivel selecionar a dificuldade")
-        self.act.fire()
-        time.sleep(1)
+        # Passo 3: Seleção de personagem
+        if self.sensor.match_template("reimu"):
+            self.act.fire()
+            time.sleep(1)
+            character_done = True
+        else:
+            logger.error("Não foi possível selecionar a personagem")
 
-        # Espera o jogo iniciar
+        # Verificação final
+        if not (start_done and difficulty_done and character_done):
+            raise Exception("Não foi possível iniciar o jogo: sequência incompleta")
+
+        # Espera o jogo carregar
         time.sleep(2)
 
     def run(self, use_bombs=False):
