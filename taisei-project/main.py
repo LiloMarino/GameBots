@@ -12,27 +12,39 @@ from bot import Bot
 from core.think import DodgeStrategy
 from logger_config import logger
 
+# =======================================
+# CONFIGURAÇÃO DE LOGGER E DIRETÓRIOS
+# =======================================
 logger.setLevel(logging.INFO)
 
 RESULTADOS_DIR = Path("../resultados")
 RESULTADOS_DIR.mkdir(exist_ok=True)
+
 TEMP_BATCH_DIR = RESULTADOS_DIR / "temp_batches"
 TEMP_BATCH_DIR.mkdir(exist_ok=True)
+
 OUTPUT_FILE = RESULTADOS_DIR / "resultados_dodge_final.parquet"
 TEMP_MERGE_FILE = RESULTADOS_DIR / "resultados_dodge_final.parquet.tmp"
 SCORE_ROI = (1429, 107, 231, 58)
 
-# --- Variáveis globais para ETA ---
+# =======================================
+# VARIÁVEIS GLOBAIS DE ESTATÍSTICA E ETA
+# =======================================
 TOTAL_RUNS = 0
 COMPLETED_RUNS = 0
 SKIPPED_RUNS = 0
 START_TIME = None
-RUN_TIMES = deque(maxlen=10)  # média móvel
+RUN_TIMES = deque(maxlen=10)  # Média móvel de execuções recentes
 
-# --- OCR Reader (inicializa uma vez só) ---
+# =======================================
+# OCR READER
+# =======================================
 reader = easyocr.Reader(["en"], gpu=True)
 
 
+# =======================================
+# FUNÇÕES DE OCR
+# =======================================
 def ocr_score(bot: Bot) -> int:
     """Captura ROI do score e aplica OCR."""
     screenshot = bot.sensor.get_screenshot()
@@ -47,6 +59,9 @@ def ocr_score(bot: Bot) -> int:
     return 0
 
 
+# =======================================
+# FUNÇÕES DE CARREGAMENTO DE RESULTADOS
+# =======================================
 def load_final_results() -> pd.DataFrame:
     """Carrega o parquet final, se existir."""
     if OUTPUT_FILE.exists():
@@ -68,8 +83,8 @@ def list_temp_batches() -> list:
 def load_all_progress() -> pd.DataFrame:
     """
     Constrói o dataframe com tudo que já foi processado:
-    - primeiro o parquet final (se houver)
-    - depois todos os temp batches (apêndice)
+    - Primeiro o parquet final (se houver)
+    - Depois todos os temp batches (apêndice)
     Isso permite continuar mesmo sem mesclar ainda o final.
     """
     dfs = []
@@ -86,11 +101,13 @@ def load_all_progress() -> pd.DataFrame:
 
     if dfs:
         df_all = pd.concat(dfs, ignore_index=True)
-        # garante colunas esperadas
         return df_all
     return pd.DataFrame()
 
 
+# =======================================
+# FUNÇÕES DE SALVAMENTO DE BATCHES TEMPORÁRIOS
+# =======================================
 def save_batch_temp(df_batch: pd.DataFrame, tag: str | None = None) -> Path:
     """Salva um dataframe de batch como parquet temporário identificado por tag+uuid."""
     if tag is None:
@@ -104,6 +121,9 @@ def save_batch_temp(df_batch: pd.DataFrame, tag: str | None = None) -> Path:
     return path
 
 
+# =======================================
+# FUNÇÃO DE CONSOLIDAÇÃO FINAL ATÔMICA
+# =======================================
 def consolidate_all_to_final():
     """
     Consolida todos os temp batches + final (se existir) em OUTPUT_FILE de forma atômica.
@@ -111,14 +131,15 @@ def consolidate_all_to_final():
     """
     logger.info("Consolidando batches temporários no parquet final...")
     parts = []
-    # final (se existir)
+
+    # Carrega final existente
     if OUTPUT_FILE.exists():
         try:
             parts.append(pd.read_parquet(OUTPUT_FILE))
         except Exception as e:
             logger.error(f"Erro lendo final existente: {e}")
 
-    # batches
+    # Carrega batches temporários
     for p in list_temp_batches():
         try:
             parts.append(pd.read_parquet(p))
@@ -129,8 +150,8 @@ def consolidate_all_to_final():
         logger.info("Nada para consolidar.")
         return
 
+    # Concatena e deduplica por chave única
     df_all = pd.concat(parts, ignore_index=True)
-    # dedupe por chave única
     dedup_cols = [
         "strategy",
         "difficulty",
@@ -143,15 +164,15 @@ def consolidate_all_to_final():
         drop=True
     )
 
-    # write atomically: escrevemos em arquivo temporário e renomeamos
+    # Escreve de forma atômica
     try:
         df_all.to_parquet(TEMP_MERGE_FILE, index=False)
-        # mover/renomear (substitui final)
         Path(TEMP_MERGE_FILE).replace(OUTPUT_FILE)
         logger.info(
             f"Parquet final gravado com {len(df_all)} linhas em {OUTPUT_FILE.name}"
         )
-        # apagar batches temporários
+
+        # Apagar batches temporários
         for p in list_temp_batches():
             try:
                 p.unlink()
@@ -159,7 +180,6 @@ def consolidate_all_to_final():
                 logger.warning(f"Não foi possível apagar batch {p.name}")
     except Exception as e:
         logger.error(f"Erro ao gravar parquet final: {e}")
-        # se falhar, deixa os temp batches (para recuperação)
         if Path(TEMP_MERGE_FILE).exists():
             try:
                 Path(TEMP_MERGE_FILE).unlink()
@@ -168,6 +188,9 @@ def consolidate_all_to_final():
         raise
 
 
+# =======================================
+# FUNÇÕES DE CONTROLE DE EXECUÇÃO
+# =======================================
 def build_already_done_set(df_progress: pd.DataFrame) -> set:
     """Cria set de chaves já processadas a partir de um dataframe (ou vazio)."""
     if df_progress is None or df_progress.empty:
@@ -184,19 +207,22 @@ def build_already_done_set(df_progress: pd.DataFrame) -> set:
     return keys
 
 
+# =======================================
+# FUNÇÕES PRINCIPAIS DE TESTE E EXECUÇÃO
+# =======================================
 def run_tests(bot: Bot, strategy: DodgeStrategy, n_runs: int):
+    """Executa todos os batches de uma estratégia específica."""
     bot.think.set_dodge_strategy(strategy)
 
     bombs_options = [False, True]
     travel_time_options = [0.5, 1.0, 1.5, 2.0]
     cell_size_options = [0.5, 1.0, 1.5, 2.0, 3.0]
 
-    # carregamos o progresso atual (final + batches temporários)
+    # Carrega progresso atual (final + batches temporários)
     df_progress = load_all_progress()
     already_done = build_already_done_set(df_progress)
 
     # Para cada combinação, executa um batch e salva parquet temporário ao final do batch
-    # OBS: cada execute_runs() salva um arquivo de batch (não atualiza OUTPUT_FILE)
     for bomb in bombs_options:
         execute_runs(bot, strategy, n_runs, bomb, 1.0, 1.0, already_done)
 
@@ -239,7 +265,7 @@ def execute_runs(
             COMPLETED_RUNS += 1
             continue
 
-        # espera o bot ativo
+        # Espera o bot ativo
         while not bot.is_active():
             time.sleep(1)
 
@@ -252,14 +278,14 @@ def execute_runs(
 
         run_start = time.perf_counter()
         try:
-            # Start e run (pode lançar)
+            # Start e run
             bot.start()
             victory = bot.run(use_bombs=bomb)
 
             # OCR direto do ROI
             score = ocr_score(bot)
 
-            # informa linha nova
+            # Nova linha do dataframe
             row = {
                 "strategy": strategy.name,
                 "difficulty": "EASY",
@@ -268,25 +294,22 @@ def execute_runs(
                 "travel_time": travel_time,
                 "cell_size": cell_size,
                 "score": score,
-                "victory": bool(victory),
+                "victory": victory,
             }
             df_new_rows.append(row)
-
-            # marca como feito para este processo (evita repetir dentro do mesmo run/session)
             already_done.add(key)
 
-            # reinicia jogo (pode lançar TimeoutError se não voltar pro menu)
+            # Reinicia jogo
             bot.reset(victory=victory)
 
         except Exception as e:
             logger.error(f"Erro durante execução da iteração {run_index}: {e}")
-            # não adiciona a linha; a iteração é contabilizada como completada para efeitos de ETA
         finally:
             COMPLETED_RUNS += 1
             exec_time = time.perf_counter() - run_start
             RUN_TIMES.append(exec_time)
 
-            # log de ETA
+            # Log de ETA
             if RUN_TIMES:
                 avg_time = sum(RUN_TIMES) / len(RUN_TIMES)
                 remaining = avg_time * (TOTAL_RUNS - COMPLETED_RUNS)
@@ -302,7 +325,7 @@ def execute_runs(
                     f"[{COMPLETED_RUNS}/{TOTAL_RUNS}] Última execução levou {timedelta(seconds=int(exec_time))} | ETA restante: {eta_str}"
                 )
 
-    # ao fim do lote, salva um parquet temporário (apêndice)
+    # Ao fim do lote, salva um parquet temporário (apêndice)
     if df_new_rows:
         df_batch = pd.DataFrame(df_new_rows)
         save_batch_temp(df_batch, tag=batch_tag)
@@ -310,13 +333,16 @@ def execute_runs(
         logger.info("Nenhuma nova linha gerada neste batch.")
 
 
+# =======================================
+# BLOCO PRINCIPAL
+# =======================================
 if __name__ == "__main__":
     bot = Bot(DodgeStrategy.MIX_DISTANCIA_DENSIDADE)
     while not bot.is_active():
         time.sleep(1)
 
     # Calcula total de execuções planejadas (usado só para ETA)
-    N_RUNS = 20  # você pode aumentar para 30 etc.
+    N_RUNS = 20
     TOTAL_RUNS = 0
     for strategy in DodgeStrategy:
         TOTAL_RUNS += 2 * N_RUNS  # bomb False/True
@@ -324,11 +350,11 @@ if __name__ == "__main__":
         if "DENSIDADE" in strategy.name:
             TOTAL_RUNS += 5 * N_RUNS  # cell_size options
 
-    # Run: cada estratégia cria seus batches temporários
+    # Executa todos os testes (gera batches temporários)
     for strategy in DodgeStrategy:
         run_tests(bot, strategy, N_RUNS)
 
-    # --- Ao final: consolida tudo num unico parquet final de forma atomica ---
+    # Consolida todos os batches temporários em um parquet final atômico
     try:
         consolidate_all_to_final()
         logger.info("Execução finalizada. Resultados consolidados.")
