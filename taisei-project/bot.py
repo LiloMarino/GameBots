@@ -115,11 +115,6 @@ class Bot:
     ) -> None:
         logger.info("Reiniciando partida...")
 
-        if victory:
-            logger.info("Vitória detectada. Saindo para o menu...")
-            self.act.press_key(Key.esc)
-            time.sleep(0.5)
-
         start_time = time.perf_counter()
         while time.perf_counter() - start_time < timeout:
             # 1. Já está no menu inicial?
@@ -142,6 +137,26 @@ class Bot:
                     self.act.fire()
                     time.sleep(0.5)
                     break
+                elif victory or self.sensor.match_template("win"):
+                    logger.info("Vitória detectada. Saindo para o menu...")
+                    self.act.press_key(Key.esc)
+                    time.sleep(0.5)
+                    if self.sensor.match_template("options"):
+                        self.act.press_key(Key.down)
+                        time.sleep(0.7)
+                        self.act.press_key(Key.down)
+                        time.sleep(0.7)
+                        self.act.press_key(Key.down)
+                        time.sleep(0.7)
+                        self.act.fire()
+                        time.sleep(0.5)
+                        self.act.press_key(Key.right)
+                        time.sleep(0.5)
+                        self.act.fire()
+                        time.sleep(0.5)
+                    else:
+                        logger.warning("Tela de Opções não detectada.")
+                        self.act.press_key(Key.esc)
                 else:
                     logger.warning(
                         "Tela de Continue não detectada. Tentando novamente..."

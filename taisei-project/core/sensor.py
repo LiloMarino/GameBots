@@ -139,7 +139,7 @@ class Sensor:
 
         result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
-
+        logger.info(f"Max val ({template_name}): {max_val}")
         if max_val >= threshold:
             template_h, template_w = template.shape[:2]
             cx = max_loc[0] + template_w // 2
