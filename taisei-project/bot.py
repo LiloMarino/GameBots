@@ -20,9 +20,6 @@ class Bot:
         self.think = Think(self.sensor.region, dodge_strategy)
         self.act = Act()
 
-        # Dados
-        self.bombs_used = 0
-
         # Inicia atalho de teclado em uma thread
         threading.Thread(
             target=lambda: keyboard.add_hotkey(self.hotkey, self.toggle), daemon=True
@@ -78,7 +75,7 @@ class Bot:
         # Alterar para enquanto estiver vidas
         self.act.continuous_fire(True)
         player_not_detected = 0
-        while player_not_detected < 150:
+        while player_not_detected < 100:
             while not self.bot_ativo:
                 self.act.continuous_fire(False)
                 time.sleep(1)
@@ -86,8 +83,9 @@ class Bot:
             screenshot, detections = self.sensor.get_objects()
             if not detections.players:
                 player_not_detected += 1
-                logger.info(f"Jogador nao detectado ({player_not_detected})")
-                if player_not_detected == 100:
+                logger.debug(f"Jogador nao detectado ({player_not_detected})")
+                if player_not_detected == 50:
+                    logger.info("Tentando pular dialogo...")
                     self.act.speedup_dialog(True)
                     time.sleep(0.5)
                     self.act.speedup_dialog(False)
@@ -102,8 +100,6 @@ class Bot:
                     # Usa o bomb para preservar a sobrevivência
                     self.act.continuous_fire(False)
                     self.act.bomb()
-                    self.bombs_used += 1
-                    logger.info(f"Usou bomba ({self.bombs_used})")
                     self.act.continuous_fire(True)
 
             vector, step = self.think.think(screenshot, detections)
