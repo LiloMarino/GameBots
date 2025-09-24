@@ -110,22 +110,20 @@ class Bot:
                     return True
         return False
 
-    def reset(
-        self, victory: bool = False, timeout: float = 10.0, retries: int = 5
-    ) -> None:
+    def reset(self, victory: bool = False, timeout: float = 10.0) -> None:
         logger.info("Reiniciando partida...")
 
-        start_time = time.perf_counter()
-        while time.perf_counter() - start_time < timeout:
-            # 1. Já está no menu inicial?
-            if self.sensor.match_template("start_game"):
-                logger.info("Menu inicial detectado. Reset concluído.")
-                return
-
-            # 2. Está na tela de Continue?
-            for _ in range(retries):
-                if self.sensor.match_template("continue"):
-                    logger.info("Tela de Continue detectada. Selecionando Restart...")
+        if victory:
+            logger.info("Vitória detectada. Tentando abrir menu de pause...")
+            # Pressiona ESC algumas vezes para garantir que o pause abriu
+            for _ in range(5):
+                self.act.press_key(Key.esc)
+                # Se conseguiu entrar no pause
+                if self.wait_for("options"):
+                    logger.info(
+                        "Tela de opções detectada. Saindo para o menu inicial..."
+                    )
+                    # Navega no pause -> Exit
                     self.act.press_key(Key.down)
                     time.sleep(0.5)
                     self.act.press_key(Key.down)
@@ -137,32 +135,52 @@ class Bot:
                     self.act.fire()
                     time.sleep(0.5)
                     break
-                elif victory or self.sensor.match_template("win"):
-                    logger.info("Vitória detectada. Saindo para o menu...")
-                    self.act.press_key(Key.esc)
-                    time.sleep(0.5)
-                    if self.sensor.match_template("options"):
-                        self.act.press_key(Key.down)
-                        time.sleep(0.7)
-                        self.act.press_key(Key.down)
-                        time.sleep(0.7)
-                        self.act.press_key(Key.down)
-                        time.sleep(0.7)
-                        self.act.fire()
-                        time.sleep(0.5)
-                        self.act.press_key(Key.right)
-                        time.sleep(0.5)
-                        self.act.fire()
-                        time.sleep(0.5)
-                    else:
-                        logger.warning("Tela de Opções não detectada.")
-                        self.act.press_key(Key.esc)
                 else:
-                    logger.warning(
-                        "Tela de Continue não detectada. Tentando novamente..."
-                    )
+                    logger.warning("Tentativa falhou. Tentando novamente...")
+            else:
+                logger.error("Não conseguiu abrir menu de pause mesmo após vitória.")
+
+        # Loop para garantir que voltou ao menu inicial
+        start_time = time.perf_counter()
+        while time.perf_counter() - start_time < timeout:
+            # Já está no menu inicial?
+            if self.sensor.match_template("start_game"):
+                logger.info("Menu inicial detectado. Reset concluído.")
+                return
+
+            # Tela de continue → Restart
+            if self.sensor.match_template("continue"):
+                logger.info("Tela de Continue detectada. Reiniciando...")
+                self.act.press_key(Key.down)
+                time.sleep(0.5)
+                self.act.press_key(Key.down)
+                time.sleep(0.5)
+                self.act.fire()
+                time.sleep(0.5)
+                self.act.press_key(Key.right)
+                time.sleep(0.5)
+                self.act.fire()
+                time.sleep(0.5)
+                continue
+
+            # Último recurso: tentar abrir menu de pause novamente
+            if victory:
+                self.act.press_key(Key.esc)
+                time.sleep(0.5)
+
+            time.sleep(0.5)
 
         raise TimeoutError("Não voltou para o menu inicial após reset.")
+
+    def wait_for(
+        self, template: str, timeout: float = 5.0, interval: float = 0.5
+    ) -> bool:
+        start = time.perf_counter()
+        while time.perf_counter() - start < timeout:
+            if self.sensor.match_template(template):
+                return True
+            time.sleep(interval)
+        return False
 
     def is_active(self):
         return self.bot_ativo
