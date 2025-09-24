@@ -215,8 +215,8 @@ def run_tests(bot: Bot, strategy: DodgeStrategy, n_runs: int):
     bot.think.set_dodge_strategy(strategy)
 
     bombs_options = [False, True]
-    travel_time_options = [0.5, 1.0, 1.5, 2.0]
-    cell_size_options = [0.5, 1.0, 1.5, 2.0, 3.0]
+    travel_time_multipliers = [0.5, 1.0, 1.5, 2.0, 3.0, 4.0]
+    cell_size_multipliers = [0.25, 0.5, 1.0, 1.5, 2.0, 3.0]
 
     # Carrega progresso atual (final + batches temporários)
     df_progress = load_all_progress()
@@ -226,11 +226,11 @@ def run_tests(bot: Bot, strategy: DodgeStrategy, n_runs: int):
     for bomb in bombs_options:
         execute_runs(bot, strategy, n_runs, bomb, 1.0, 1.0, already_done)
 
-    for travel_time in travel_time_options:
+    for travel_time in travel_time_multipliers:
         execute_runs(bot, strategy, n_runs, False, travel_time, 1.0, already_done)
 
     if "DENSIDADE" in strategy.name:
-        for cell_size in cell_size_options:
+        for cell_size in cell_size_multipliers:
             execute_runs(bot, strategy, n_runs, False, 1.0, cell_size, already_done)
 
 
@@ -342,7 +342,7 @@ if __name__ == "__main__":
         time.sleep(1)
 
     # Calcula total de execuções planejadas (usado só para ETA)
-    N_RUNS = 20
+    N_RUNS = 50
     TOTAL_RUNS = 0
     for strategy in DodgeStrategy:
         TOTAL_RUNS += 2 * N_RUNS  # bomb False/True
