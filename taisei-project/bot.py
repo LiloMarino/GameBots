@@ -107,7 +107,9 @@ class Bot:
             self.act.dodge(vector, step)
             if not detections.enemies and not detections.bullets:
                 if self.sensor.match_template("win"):
+                    self.act.continuous_fire(False)
                     return True
+        self.act.continuous_fire(False)
         return False
 
     def reset(self, victory: bool = False, timeout: float = 10.0) -> None:
