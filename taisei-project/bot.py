@@ -112,6 +112,29 @@ class Bot:
         self.act.continuous_fire(False)
         return False
 
+    def benchmark(self, n_iters: int = 200) -> dict:
+        self.act.continuous_fire(True)
+        times = []
+        for _ in range(n_iters):
+            t0 = time.perf_counter_ns()
+            screenshot, detections = self.sensor.get_objects()
+            vector, step = self.think.think(screenshot, detections)
+            self.act.dodge(vector, step)
+            if not detections.enemies and not detections.bullets:
+                if self.sensor.match_template("win"):
+                    self.act.continuous_fire(False)
+            times.append(time.perf_counter_ns() - t0)
+        avg_ns = sum(times) / len(times)
+        avg_s = avg_ns / 1e9
+        fps = 1 / avg_s if avg_s > 0 else 0
+        self.act.continuous_fire(False)
+        return {
+            "avg_loop_s": avg_s,
+            "avg_loop_ns": avg_ns,
+            "fps_loop": fps,
+            "n_iters": n_iters,
+        }
+
     def reset(self, victory: bool = False, timeout: float = 10.0) -> None:
         logger.info("Reiniciando partida...")
 
