@@ -113,7 +113,10 @@ class Bot:
         return False
 
     def benchmark(self, n_iters: int = 200) -> dict:
+        while not self.bot_ativo:
+            time.sleep(1)
         self.act.continuous_fire(True)
+        print("Iniciando benchmark...")
         times = []
         for _ in range(n_iters):
             t0 = time.perf_counter_ns()
