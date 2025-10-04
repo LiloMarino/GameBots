@@ -35,7 +35,7 @@ TOTAL_RUNS = 0
 COMPLETED_RUNS = 0
 SKIPPED_RUNS = 0
 START_TIME = None
-RUN_TIMES = deque(maxlen=10)  # Média móvel de execuções recentes
+RUN_TIMES = deque(maxlen=25)  # Média móvel de execuções recentes
 
 # =======================================
 # OCR READER
@@ -352,59 +352,59 @@ if __name__ == "__main__":
     # Calcula total de execuções planejadas (usado só para ETA)
     N_RUNS = 50
     TOTAL_RUNS = 0
-    # for strategy in DodgeStrategy:
-    #     TOTAL_RUNS += 2 * N_RUNS  # bomb False/True
-    #     TOTAL_RUNS += 5 * N_RUNS  # travel_time options
-    #     if "DENSIDADE" in strategy.name:
-    #         TOTAL_RUNS += 5 * N_RUNS  # cell_size options
+    for strategy in DodgeStrategy:
+        TOTAL_RUNS += 2 * N_RUNS  # bomb False/True
+        TOTAL_RUNS += 5 * N_RUNS  # travel_time options
+        if "DENSIDADE" in strategy.name:
+            TOTAL_RUNS += 5 * N_RUNS  # cell_size options
 
     # Executa todos os testes (gera batches temporários)
-    # for strategy in DodgeStrategy:
-    #     run_tests(bot, strategy, N_RUNS)
+    for strategy in DodgeStrategy:
+        run_tests(bot, strategy, N_RUNS)
 
-    # Defina aqui os melhores parâmetros que você encontrou
-    best_params = {
-        DodgeStrategy.MENOR_DISTANCIA: {
-            "bomb": True,
-            "travel_time": 4.0,
-            "cell_size": 1.0,
-        },
-        DodgeStrategy.MENOR_DENSIDADE: {
-            "bomb": True,
-            "travel_time": 4.0,
-            "cell_size": 0.5,
-        },
-        DodgeStrategy.MIX_DISTANCIA_DENSIDADE: {
-            "bomb": True,
-            "travel_time": 4.0,
-            "cell_size": 0.5,
-        },
-    }
+    # # Defina aqui os melhores parâmetros que você encontrou
+    # best_params = {
+    #     DodgeStrategy.MENOR_DISTANCIA: {
+    #         "bomb": True,
+    #         "travel_time": 4.0,
+    #         "cell_size": 1.0,
+    #     },
+    #     DodgeStrategy.MENOR_DENSIDADE: {
+    #         "bomb": True,
+    #         "travel_time": 4.0,
+    #         "cell_size": 0.5,
+    #     },
+    #     DodgeStrategy.MIX_DISTANCIA_DENSIDADE: {
+    #         "bomb": True,
+    #         "travel_time": 4.0,
+    #         "cell_size": 0.5,
+    #     },
+    # }
 
-    # Sobrescreve parquet final para não misturar com os outros
-    OUTPUT_FILE = RESULTADOS_DIR / "resultados_dodge_best.parquet"
-    TEMP_MERGE_FILE = RESULTADOS_DIR / "resultados_dodge_best.parquet.tmp"
+    # # Sobrescreve parquet final para não misturar com os outros
+    # OUTPUT_FILE = RESULTADOS_DIR / "resultados_dodge_best.parquet"
+    # TEMP_MERGE_FILE = RESULTADOS_DIR / "resultados_dodge_best.parquet.tmp"
 
-    # Calcula total de execuções (só para ETA)
-    TOTAL_RUNS = len(best_params) * N_RUNS
+    # # Calcula total de execuções (só para ETA)
+    # TOTAL_RUNS = len(best_params) * N_RUNS
 
-    # Carrega progresso existente desse parquet (se já rodou algo)
-    df_progress = load_all_progress()
-    already_done = build_already_done_set(df_progress)
+    # # Carrega progresso existente desse parquet (se já rodou algo)
+    # df_progress = load_all_progress()
+    # already_done = build_already_done_set(df_progress)
 
-    # Roda cada estratégia com seus parâmetros fixos
-    for strategy, params in best_params.items():
-        logger.info(f"== Rodando {strategy.name} com parâmetros fixos {params}")
-        execute_runs(
-            bot,
-            strategy,
-            N_RUNS,
-            bomb=params["bomb"],
-            travel_time=params["travel_time"],
-            cell_size=params["cell_size"],
-            already_done=already_done,
-            batch_tag=f"best_{strategy.name}",
-        )
+    # # Roda cada estratégia com seus parâmetros fixos
+    # for strategy, params in best_params.items():
+    #     logger.info(f"== Rodando {strategy.name} com parâmetros fixos {params}")
+    #     execute_runs(
+    #         bot,
+    #         strategy,
+    #         N_RUNS,
+    #         bomb=params["bomb"],
+    #         travel_time=params["travel_time"],
+    #         cell_size=params["cell_size"],
+    #         already_done=already_done,
+    #         batch_tag=f"best_{strategy.name}",
+    #     )
 
     # Consolida todos os batches temporários em um parquet final atômico
     try:

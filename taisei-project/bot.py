@@ -192,13 +192,31 @@ class Bot:
                 continue
 
             # Último recurso: tentar abrir menu de pause novamente
-            if victory:
+            if time.perf_counter() - start_time > timeout / 2:
                 self.act.press_key(Key.esc)
                 time.sleep(0.5)
+                # Se conseguiu entrar no pause
+                if self.wait_for("options"):
+                    logger.info(
+                        "Tela de opções detectada. Saindo para o menu inicial..."
+                    )
+                    # Navega no pause -> Exit
+                    self.act.press_key(Key.down)
+                    time.sleep(0.5)
+                    self.act.press_key(Key.down)
+                    time.sleep(0.5)
+                    self.act.fire()
+                    time.sleep(0.5)
+                    self.act.press_key(Key.right)
+                    time.sleep(0.5)
+                    self.act.fire()
+                    time.sleep(0.5)
+                    continue
 
             time.sleep(0.5)
 
-        raise TimeoutError("Não voltou para o menu inicial após reset.")
+        if not self.sensor.match_template("start_game"):
+            raise TimeoutError("Não voltou para o menu inicial após reset.")
 
     def wait_for(
         self, template: str, timeout: float = 5.0, interval: float = 0.5
