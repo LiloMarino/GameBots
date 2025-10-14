@@ -1,7 +1,9 @@
 {
-  "python.analysis.extraPaths": ["./taisei-project"],
+  "python.analysis.extraPaths": [
+    "./2048"
+  ],
   "python.autoComplete.extraPaths": [
-    "./taisei-project"
+    "./2048"
   ],
   "conventionalCommits.scopes": [
     "distrocards",

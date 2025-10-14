@@ -53,6 +53,8 @@ class Sensor:
         self.sct = mss.mss()
         self.reader = easyocr.Reader(["pt"])
         self.margem = 0 if self.fixed else 20
+        self.ocr_method = ocr_method
+        self.grade_method = grade_method
 
         # Métodos e técnicas
         self.ler_texto = {

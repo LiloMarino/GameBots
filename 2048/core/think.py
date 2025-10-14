@@ -58,7 +58,7 @@ class Think:
         logger.debug(f"Estado atual do tabuleiro:\n{board}")
 
         # Filtra os movimentos que geram mudança
-        valid_moves = {}
+        valid_moves: dict[str, np.ndarray] = {}
         for move, new_board in moves.items():
             if not np.array_equal(board, new_board):
                 valid_moves[move] = new_board
