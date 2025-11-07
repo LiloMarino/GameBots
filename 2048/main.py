@@ -53,6 +53,7 @@ for ocr_method, grade_method in combinacoes:
     logger.info("Testando combinação: %s", (ocr_method.name, grade_method.name))
 
     for partida in range(1, MAX_PARTIDAS + 1):
+        retry = True
         while retry:
             retry = False
             logger.info(f"Partida {partida}/{MAX_PARTIDAS}")
@@ -114,6 +115,7 @@ pontuacoes = []
 tempos_partida = []
 
 for partida in range(1, MAX_PARTIDAS + 1):
+    retry = True
     while retry:
         retry = False
         logger.info(f"Partida {partida}/{MAX_PARTIDAS}")
